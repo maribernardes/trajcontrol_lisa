@@ -1,0 +1,24 @@
+@startuml
+  participant robot
+  participant aurora
+  participant UI
+  participant ros2_igtl_bridge
+
+  box trajcontrol
+    participant keypress
+    participant sensor_processing
+    participant controller
+  end box
+
+  keypress-->sensor_processing: '/keyboard/key'
+  keypress->controller: '/keyboard/key'
+  aurora -> ros2_igtl_bridge: PlusServer
+  ros2_igtl_bridge -> sensor_processing: IGTL_TRANSFORM_IN
+  
+  sensor_processing -> controller: '/needle/state/pose_filtered'
+  UI -> controller: /subject/state/skin_entry
+  UI -> controller: /subject/state/target
+  robot -> controller: /stage/state/needle_pose
+
+  controller -> robot: /move_stage
+@enduml
