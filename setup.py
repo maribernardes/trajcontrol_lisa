@@ -31,6 +31,7 @@ setup(
             'sensor_processing = trajcontrol.sensor_processing:main',
             'insertion_node = trajcontrol.insertion_node:main',
             'controller_node = trajcontrol.controller_node:main',
+            'save_file = trajcontrol.save_file:main',
         ],
     },
 )

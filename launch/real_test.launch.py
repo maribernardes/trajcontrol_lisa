@@ -31,6 +31,12 @@ def generate_launch_description():
         executable="controller_node"
     )   
 
+    savefile = Node(
+        package="trajcontrol",
+        executable="save_file",
+        parameters=[{"filename":LaunchConfiguration('filename')}]
+    )
+
     return LaunchDescription([
         DeclareLaunchArgument(
             "registration",
@@ -38,7 +44,14 @@ def generate_launch_description():
             description="0=load previous / 1=new registration"
         ),
         actions.LogInfo(msg=["registration: ", LaunchConfiguration('registration')]),
+        DeclareLaunchArgument(
+            "filename",
+            default_value="my_data",
+            description="File name to save .csv file with experimental data"
+        ),
+        actions.LogInfo(msg=["filename: ", LaunchConfiguration('filename')]),
         aurora,
         sensor,
         controller,
+        savefile,
     ])

@@ -16,7 +16,7 @@ class ControllerNode(Node):
         super().__init__('controller_node')
 
         #Declare node parameters
-        self.declare_parameter('K', 1.0) #Controller gain
+        self.declare_parameter('K', -0.5) #Controller gain
 
         #Topic from keypress node
         self.subscription_keyboard = self.create_subscription(Int8, '/keyboard/key', self.keyboard_callback, 10)
@@ -63,14 +63,13 @@ class ControllerNode(Node):
 
     # Get current target
     def target_callback(self, msg):
-        entry_point = msg
-        self.target = np.array([entry_point.x, entry_point.z])
+        target = msg
+        self.target = np.array([target.x, target.z])
 
     # Get current tip pose
     def tip_callback(self, msg):
         tip = msg.pose
         self.tip = np.array([tip.position.x, tip.position.z])
-        self.target = np.array([tip.position.x+1, tip.position.z+1]) # REMOVE AFTER TESTS
 
     # Get current base pose
     def robot_callback(self, msg_robot):
@@ -85,12 +84,14 @@ class ControllerNode(Node):
             # Get pose from PoseStamped
             K = self.get_parameter('K').get_parameter_value().double_value    # Get K value          
             error = self.tip-self.target
-            
-            cmd = abs(self.stage) + K*error  # Calculate control output
-            print()
+            self.cmd = self.stage + K*error  # Calculate control output
+
             # Limit control output to maximum +-5mm around entry point
-            self.cmd[0] = min(cmd[0], self.entry_point[0]+5)
-            self.cmd[1] = min(cmd[1], self.entry_point[1]+5)
+            self.cmd[0] = min(self.cmd[0], self.entry_point[0]+10)
+            self.cmd[1] = min(self.cmd[1], self.entry_point[1]+10)
+            self.cmd[0] = max(self.cmd[0], self.entry_point[0]-10)
+            self.cmd[1] = max(self.cmd[1], self.entry_point[1]-10)
+
 
             # Send command to stage
             self.robot_ready = False
@@ -99,7 +100,9 @@ class ControllerNode(Node):
             goal_msg.z = float(self.cmd[1]*0.001)
             goal_msg.eps = 0.0001
 
-            self.get_logger().info('Waiting for action server...')
+            self.get_logger().info('Tip: x=%f, z=%f - Target: x=%f, z=%f' % (self.tip[0], self.tip[1], self.target[0], self.target[1]))    
+
+            # self.get_logger().info('Waiting for action server...')
             self.action_client.wait_for_server()
             
             self.get_logger().info('Sending goal request... Control u: x=%f, z=%f' % ((goal_msg.x)*1000, (goal_msg.z)*1000))      

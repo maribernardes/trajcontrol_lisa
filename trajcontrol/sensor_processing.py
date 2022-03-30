@@ -2,6 +2,8 @@ import os
 import rclpy
 import numpy as np
 import time
+import keyboard
+import numpy.matlib 
 import quaternion
 
 from rclpy.node import Node
@@ -128,7 +130,7 @@ class SensorProcessing(Node):
                 # Calculate registration transform
                 self.registration = find_registration(self.A, self.B)   #Store registration transform
                 # Save matrix to file
-                savetxt(os.path.join(os.getcwd(),'src','trajcontrol','files','registration.csv'), asarray(self.registration), delimiter=',')                              
+                savetxt(os.path.join(os.getcwd(),'src','trajcontrol_lisa','files','registration.csv'), asarray(self.registration), delimiter=',')                              
 
         else:    # Load previous registration from file
             self.get_logger().info('Loading stored registration transform ...')
