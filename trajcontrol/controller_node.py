@@ -16,7 +16,7 @@ class ControllerNode(Node):
         super().__init__('controller_node')
 
         #Declare node parameters
-        self.declare_parameter('K', 0.001) #Controller gain
+        self.declare_parameter('K', 1.0) #Controller gain
 
         #Topic from keypress node
         self.subscription_keyboard = self.create_subscription(Int8, '/keyboard/key', self.keyboard_callback, 10)
@@ -85,8 +85,9 @@ class ControllerNode(Node):
             # Get pose from PoseStamped
             K = self.get_parameter('K').get_parameter_value().double_value    # Get K value          
             error = self.tip-self.target
-            cmd = self.stage + K*error  # Calculate control output
-
+            
+            cmd = abs(self.stage) + K*error  # Calculate control output
+            print()
             # Limit control output to maximum +-5mm around entry point
             self.cmd[0] = min(cmd[0], self.entry_point[0]+5)
             self.cmd[1] = min(cmd[1], self.entry_point[1]+5)
@@ -94,15 +95,17 @@ class ControllerNode(Node):
             # Send command to stage
             self.robot_ready = False
             goal_msg = MoveStage.Goal()
-            goal_msg.x = float(self.cmd[0])
-            goal_msg.z = float(self.cmd[1])
-            goal_msg.eps = 0.0
+            goal_msg.x = float(self.cmd[0]*0.001)
+            goal_msg.z = float(self.cmd[1]*0.001)
+            goal_msg.eps = 0.0001
 
             self.get_logger().info('Waiting for action server...')
             self.action_client.wait_for_server()
             
-            self.get_logger().info('Sending goal request... Control u: x=%f, z=%f' % (goal_msg.x, goal_msg.z))      
+            self.get_logger().info('Sending goal request... Control u: x=%f, z=%f' % ((goal_msg.x)*1000, (goal_msg.z)*1000))      
             self.send_goal_future = self.action_client.send_goal_async(goal_msg)
+            goal_msg.x = goal_msg.x*1000
+            goal_msg.z = goal_msg.z*1000
             self.send_goal_future.add_done_callback(self.goal_response_callback)
 
     # Check if MoveStage action was accepted 

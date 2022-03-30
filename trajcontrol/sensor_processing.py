@@ -133,7 +133,7 @@ class SensorProcessing(Node):
         else:    # Load previous registration from file
             self.get_logger().info('Loading stored registration transform ...')
             try:
-                self.registration = loadtxt(os.path.join(os.getcwd(),'src','trajcontrol','files','registration.csv'), delimiter=',')
+                self.registration = loadtxt(os.path.join(os.getcwd(),'src','trajcontrol_lisa','files','registration.csv'), delimiter=',')
 
             except IOError:
                 self.get_logger().info('Could not find registration.csv file')        

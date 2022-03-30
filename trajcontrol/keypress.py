@@ -1,8 +1,10 @@
 import getch
 import rclpy
+import time
 
 from rclpy.node import Node
 from std_msgs.msg import Int8
+from geometry_msgs.msg import PoseStamped
 
 class Keypress(Node):
 
@@ -19,8 +21,15 @@ class Keypress(Node):
         if (k==10) or (k==32):# to filter only desired keys: 10=ENTER, 32=SPACE
             msg = Int8()
             msg.data = k
+            msgtemp = PoseStamped()
+            msgtemp.header.stamp = self.get_clock().now().to_msg()
+            
+            #timestamped_END = self.get_clock().now().to_msg()
+            self.get_logger().info('Timestamped BEGINNING %s' %(msgtemp.header.stamp))
             self.publisher.publish(msg)
             self.get_logger().info('Pressed %s' %(k))
+            
+
 
 def main(args=None):
     rclpy.init(args=args)

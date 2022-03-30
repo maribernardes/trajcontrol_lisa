@@ -15,10 +15,10 @@ def generate_launch_description():
         executable="virtual_aurora",
     )
 
-    robot = Node(
-        package="trajcontrol",
-        executable="virtual_robot"
-    )   
+    #robot = Node(
+    #    package="trajcontrol",
+    #    executable="virtual_robot"
+    #)   
 
     sensor = Node(
         package = "trajcontrol",
@@ -40,6 +40,6 @@ def generate_launch_description():
         actions.LogInfo(msg=["registration: ", LaunchConfiguration('registration')]),
         sensor,
         aurora,
-        robot,
+        #robot,
         controller
     ])

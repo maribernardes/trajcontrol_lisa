@@ -22,7 +22,7 @@ class VirtualAurora(Node):
         self.timer = self.create_timer(timer_period, self.timer_callback)
 
         #Load data from matlab file
-        file_path = os.path.join(os.getcwd(),'src','trajcontrol','files',self.get_parameter('dataset').get_parameter_value().string_value + '.mat') #String with full path to file
+        file_path = os.path.join(os.getcwd(),'src','trajcontrol_lisa','files',self.get_parameter('dataset').get_parameter_value().string_value + '.mat') #String with full path to file
         trial_data = loadmat(file_path, mat_dtype=True)
         self.sensor = trial_data['sensor'][0]
         self.i=0
