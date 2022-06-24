@@ -25,12 +25,12 @@ setup(
     tests_require=['pytest'],
     entry_points={
         'console_scripts': [
-            'virtual_aurora = trajcontrol.virtual_aurora:main',
-            'virtual_robot = trajcontrol.virtual_robot:main',
             'keypress = trajcontrol.keypress:main',
+            'registration = trajcontrol.registration:main',
+            'controller_manual = trajcontrol.controller_manual:main',
+            'controller_sequence = trajcontrol.controller_sequence:main',
+            'controller = trajcontrol.controller:main',
             'sensor_processing = trajcontrol.sensor_processing:main',
-            'insertion_node = trajcontrol.insertion_node:main',
-            'controller_node = trajcontrol.controller_node:main',
             'save_file = trajcontrol.save_file:main',
         ],
     },

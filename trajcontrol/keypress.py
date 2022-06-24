@@ -1,10 +1,8 @@
 import getch
 import rclpy
-import time
 
 from rclpy.node import Node
 from std_msgs.msg import Int8
-from geometry_msgs.msg import PoseStamped
 
 class Keypress(Node):
 
@@ -18,18 +16,12 @@ class Keypress(Node):
 
     def timer_keyboard_callback(self):
         k = ord(getch.getch())  # this is used to convert the keypress event in the keyboard or joypad , joystick to a ord value
-        if (k==10) or (k==32):# to filter only desired keys: 10=ENTER, 32=SPACE
+        # to filter only desired keys: 10=ENTER, 32=SPACE, 50=down_numkey, 52=left_numkey, 54=right_numkey, 56=up_numkey
+        if (k==10) or (k==32) or (k==50) or (k==52) or (k==54) or (k==56):
             msg = Int8()
             msg.data = k
-            msgtemp = PoseStamped()
-            msgtemp.header.stamp = self.get_clock().now().to_msg()
-            
-            #timestamped_END = self.get_clock().now().to_msg()
-            self.get_logger().info('Timestamped BEGINNING %s' %(msgtemp.header.stamp))
             self.publisher.publish(msg)
             self.get_logger().info('Pressed %s' %(k))
-            
-
 
 def main(args=None):
     rclpy.init(args=args)
