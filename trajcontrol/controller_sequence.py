@@ -39,8 +39,12 @@ class ControllerSequence(Node):
         self.action_client = ActionClient(self, MoveStage, '/move_stage')
 
         #Targets
-        self.target = np.array([[0, 0, 0, 0, -20, -20, -20, -20, -40, -40, -40, -40, -60, -60, -60, -60, -80, -80, -80, -80],
-                                [0, 2.5, 5, 7.5, 7.5, 5, 2.5, 0, 0, 2.5, 5, 7.5, 7.5, 5, 2.5, 0, 0, 2.5, 5, 7.5]])   
+        # self.target = np.array([[0, 0, 0, 0, -20, -20, -20, -20, -40, -40, -40, -40, -60, -60, -60, -60, -80, -80, -80, -80],
+        #                         [0, 2.5, 5, 7.5, 7.5, 5, 2.5, 0, 0, 2.5, 5, 7.5, 7.5, 5, 2.5, 0, 0, 2.5, 5, 7.5]])   
+
+        self.target = np.array([[0, -25, -50],
+                                [0, 0, 0]])   
+
 
         # Stored values
         self.entry_point = np.empty(shape=[2,0])    # Needle tip entry point

@@ -15,22 +15,6 @@ from launch.actions import DeclareLaunchArgument
 
 def generate_launch_description():
 
-    # config = os.path.join(
-    #     get_package_share_directory('trajcontrol'),
-    #     'config',
-    #     'aurora_smart_template_params.yaml'
-    #     )
-
-    # aurora = Node(
-    #     package="ros2_igtl_bridge",
-    #     executable="igtl_node",
-    #     parameters=[
-    #         {"RIB_server_ip":"localhost"},
-    #         {"RIB_port": 18944},
-    #         {"RIB_type": "client"}
-    #     ]
-    # )
-
     sensor = Node(
         package = "trajcontrol",
         executable = "sensor_processing"
@@ -54,7 +38,6 @@ def generate_launch_description():
             description="File name to save .csv file with experimental data"
         ),
         actions.LogInfo(msg=["filename: ", LaunchConfiguration('filename')]),
-        # aurora,
         sensor,
         controller,
         save_file,
