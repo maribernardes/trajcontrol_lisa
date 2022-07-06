@@ -199,9 +199,10 @@ def main(args=None):
         if (registration.transform.size == 0): #No registration yet
             registration.get_registration()
         else:
-            registration.get_logger().info('Registration procedure successfully completed!' %  (registration.transform))
-            registration.get_logger().info('Press Ctrl + C to quit')
-            break
+            if (registration.robot_idle == True):
+                registration.get_logger().info('Registration procedure successfully completed!' %  (registration.transform))
+                registration.get_logger().info('Press Ctrl + C to quit')
+                break
    
     rclpy.spin(registration)
 
