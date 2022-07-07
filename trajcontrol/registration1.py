@@ -14,9 +14,7 @@ from ros2_igtl_bridge.msg import Transform
 from numpy import asarray, savetxt, loadtxt
 # from std_msgs.msg import Int8
 # from geometry_msgs.msg import PoseStamped, Point, Quaternion
-# from scipy.ndimage import median_filter
-
-BUFF = 500  #Size of sensor buffer
+from scipy.ndimage import median_filter
 
 class Registration(Node):
 
@@ -34,12 +32,9 @@ class Registration(Node):
         self.robot_idle = True                      # Stage move action status
         self.current_point = 0                      # Current registration point
         self.transform = np.empty(shape=[0,7])      # Registration transform (from aurora to stage)
-        self.Z_sensor = np.empty(shape=[0,7])       # Tip sensor value in Aurora frame
-        
-        self.sensor_buffer = True                   # Buffer sensor data to extract mean value
-        self.buffer_index = 0                       # Buffer index
-        self.Z_buffer = np.empty(shape=[BUFF,7])    # Buffer of sensor data
-        self.Z = np.empty(shape=[0,7])              # Filtered (mean) tip value in Aurora frame
+        self.auroraZ = np.empty(shape=[0,7])        # All stored Aurora tip readings as they are sent
+        self.Z_sensor = np.empty(shape=[0,7])       # Aurora tip sensor value as sent
+        self.Z = np.empty(shape=[0,7])              # Filtered aurora tip value in robot frame
 
         # Registration points A (aurora) and B (stage)
         ###############################################################################
@@ -61,15 +56,14 @@ class Registration(Node):
             # Get aurora new reading
             self.Z_sensor = np.array([[msg_sensor.transform.translation.x, msg_sensor.transform.translation.y, msg_sensor.transform.translation.z, \
                 msg_sensor.transform.rotation.w, msg_sensor.transform.rotation.x, msg_sensor.transform.rotation.y, msg_sensor.transform.rotation.z]])
-            # If sensor buffer is on (robot reached a registration point)
-            if (self.sensor_buffer == True):
-                # Store sensor reading in the buffer
-                self.Z_buffer[self.buffer_index,:] = self.Z_sensor
-                self.buffer_index = self.buffer_index+1
-                # Completed buffer
-                if (self.buffer_index >= BUFF):
-                    self.Z = numpy.mean(self.Z_buffer, axis=0)
-                    self.sensor_buffer = False
+            self.auroraZ = np.row_stack((self.auroraZ, self.Z_sensor))
+
+            # Smooth the measurements with a median filter 
+            n = self.auroraZ.shape[0]
+            size_win = min(n, 500) #array window size
+            if (size_win>0): 
+                Z_filt = median_filter(self.auroraZ[n-size_win:n,:], size=(40,1))   # use 40 samples median filter (column-wise)
+                self.Z_sensor = Z_filt[size_win-1,:]                                # get last value   
 
     def get_registration(self):  
         # Get points until A is same size as B
@@ -89,16 +83,20 @@ class Registration(Node):
             self.send_cmd(0.0, 0.0)
 
     def get_next_point(self):
-        # Robot finished moving and sensor buffer already full
-        if (self.robot_idle == True) and (self.sensor_buffer == False):
+        # Robot finished moving
+        if (self.robot_idle == True):
             # New point reached but not stored
             if (self.A.shape[1] < self.current_point):
-                if (self.Z.size == 0):
-                    self.get_logger().info('There is no sensor reading to store. Check Aurora')
-                else:
-                    P = self.Z[0:3] # Store next registration point
-                    self.get_logger().info('Stored A Point #%i = (%f, %f, %f)' % (self.current_point, P[0], P[1], P[2]))
-                    self.A = np.column_stack((self.A, P.T))
+                time_end = self.get_clock().now()
+                delta_time = time_end - self.time_begin
+                # Waited a little for Aurora to converge
+                if (delta_time.nanoseconds*1e-9 >= 3.0):
+                    if (self.Z_sensor.size == 0):
+                        self.get_logger().info('There is no sensor reading to store. Check Aurora')
+                    else:
+                        P = self.Z_sensor[0:3] # Store next registration point
+                        self.get_logger().info('Stored A Point #%i = (%f, %f, %f)' % (self.current_point, P[0], P[1], P[2]))
+                        self.A = np.column_stack((self.A, P.T))
             # Select next point
             else:
                 # Get next B point
@@ -110,6 +108,7 @@ class Registration(Node):
 
     # Send MoveStage action to Stage
     def send_cmd(self, x, z):
+
         # Send command to stage (convert mm to m)
         self.robot_idle = False
         goal_msg = MoveStage.Goal()
@@ -141,8 +140,7 @@ class Registration(Node):
         status = future.result().status
         if status == GoalStatus.STATUS_SUCCEEDED:
             self.robot_idle = True
-            self.sensor_buffer = True
-            self.buffer_index = 0
+            self.time_begin = self.get_clock().now()
             self.get_logger().info('Goal succeeded! Result: {0}'.format(result.x*1000))
         else:
             self.get_logger().info('Goal failed with status: {0}'.format(status))
