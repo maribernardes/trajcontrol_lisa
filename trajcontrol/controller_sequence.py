@@ -38,9 +38,11 @@ class ControllerSequence(Node):
         # self.target = np.array([[0, 0, 0, 0, -20, -20, -20, -20, -40, -40, -40, -40, -60, -60, -60, -60, -80, -80, -80, -80],
         #                         [0, 2.5, 5, 7.5, 7.5, 5, 2.5, 0, 0, 2.5, 5, 7.5, 7.5, 5, 2.5, 0, 0, 2.5, 5, 7.5]])   
 
-        self.target = np.array([[-5, -10, -15, -20, -25, -30, 0],
-                                [0, 0, 0, 0, 0, 0, 0]])   
+        # self.target = np.array([[-5, -10, -15, -20, -25, -30, 0],
+        #                         [0, 0, 0, 0, 0, 0, 0]])   
 
+        self.target = np.array([[-15],
+                                [0]])  
 
         # Stored values
         self.stage_initial = np.empty(shape=[2,0])  # Stage home position
