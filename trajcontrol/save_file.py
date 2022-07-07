@@ -150,7 +150,9 @@ class SaveFile(Node):
             self.J[28], self.J[29], self.J[30], self.J[31], self.J[32], self.J[33], self.J[34], \
             self.J[35], self.J[36], self.J[37], self.J[38], self.J[39], self.J[40], self.J[41], \
             self.J[42], self.J[43], self.J[44], self.J[45], self.J[46], self.J[47], self.J[48], self.Jtime[0] , self.Jtime[1], \
-            self.cmd[0], self.cmd[1], self.cmd[2], self.cmd[3]]
+            self.cmd[0], self.cmd[1], self.cmd[2], self.cmd[3], \
+            self.stage[0], self.stage[1], self.stage[2], self.stage[3] \
+            ]
         
         with open(self.filename, 'a', newline='', encoding='UTF8') as f: # open the file in append mode
             writer = csv.writer(f) # create the csv writer
