@@ -41,7 +41,7 @@ class ControllerSequence(Node):
         # self.target = np.array([[-5, -10, -15, -20, -25, -30, 0],
         #                         [0, 0, 0, 0, 0, 0, 0]])   
 
-        self.target = np.array([[0],
+        self.target = np.array([[-30],
                                 [0]])  
 
         # Stored values
