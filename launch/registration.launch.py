@@ -3,22 +3,15 @@ import os
 from ament_index_python.packages import get_package_share_directory
 from launch import LaunchDescription
 from launch_ros.actions import Node
-from launch.substitutions import LaunchConfiguration
 from launch.launch_description_sources import PythonLaunchDescriptionSource
 from launch.actions import IncludeLaunchDescription
-from launch.actions import LogInfo
-
-import sys
 
 from ament_index_python.packages import get_package_share_directory
 from launch_ros.actions import Node
-from launch import LaunchDescription, actions
-from launch.actions import DeclareLaunchArgument
-from launch.substitutions import ThisLaunchFileDir
+from launch import LaunchDescription
 
 # Launch registration procedure
 # Remember to launch PlusServer connected to Aurora in another terminal
-
 
 def generate_launch_description():
 

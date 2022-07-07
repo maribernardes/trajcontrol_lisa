@@ -12,6 +12,9 @@ from launch_ros.actions import Node
 from launch import LaunchDescription, actions
 from launch.actions import DeclareLaunchArgument
 
+# Launch stage control in simple mode
+# Remember to launch PlusServer connected to Aurora in another terminal
+# Remember to launch keypress node (trajcontrol package) in another terminal
 
 def generate_launch_description():
 
@@ -22,7 +25,7 @@ def generate_launch_description():
 
     controller = Node(
         package="trajcontrol",
-        executable="controller_sequence",
+        executable="controller",
     )   
 
     save_file = Node(

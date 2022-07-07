@@ -143,8 +143,6 @@ class SensorProcessing(Node):
             #Listen to keyboard
             self.get_logger().info('Please, place the needle at the Entry Point and hit SPACE bar')
             self.listen_keyboard = True         # Start listening to keyboard     
-        # Wait a little
-        time.sleep(0.5) 
        
 ########################################################################
 

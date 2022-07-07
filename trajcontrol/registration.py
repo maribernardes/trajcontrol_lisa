@@ -29,7 +29,7 @@ class Registration(Node):
         self.action_client = ActionClient(self, MoveStage, '/move_stage')
 
         # Stored values
-        self.robot_idle = True                     # Stage move action status
+        self.robot_idle = True                      # Stage move action status
         self.current_point = 0                      # Current registration point
         self.transform = np.empty(shape=[0,7])      # Registration transform (from aurora to stage)
         self.auroraZ = np.empty(shape=[0,7])        # All stored Aurora tip readings as they are sent
@@ -97,7 +97,7 @@ class Registration(Node):
                         P = self.Z_sensor[0:3] # Store next registration point
                         self.get_logger().info('Stored A Point #%i = (%f, %f, %f)' % (self.current_point, P[0], P[1], P[2]))
                         self.A = np.column_stack((self.A, P.T))
-            # New point still not reached
+            # Select next point
             else:
                 # Get next B point
                 P = self.B[:, self.A.shape[1]]
@@ -200,8 +200,8 @@ def main(args=None):
             registration.get_registration()
         else:
             if (registration.robot_idle == True):
-                registration.get_logger().info('Registration procedure successfully completed!' %  (registration.transform))
-                registration.get_logger().info('Press Ctrl + C to quit')
+                registration.get_logger().info('Registration procedure successfully completed! Press Ctrl + C to quit' )
+                input()
                 break
    
     rclpy.spin(registration)

@@ -1,4 +1,5 @@
 import rclpy
+import time
 import numpy as np
 
 from rclpy.node import Node
@@ -10,9 +11,6 @@ from cv_bridge import CvBridge
 from sensor_msgs.msg import Image
 from stage_control_interfaces.action import MoveStage
 
-SAFE_LIMIT = 5.0            # Maximum control output delta from entry point
-CONTROL_LENGTH = 50.0       # Maximum insertion depth for control input (stops robot after that point)
-
 class ControllerSequence(Node):
 
     def __init__(self):
@@ -21,8 +19,6 @@ class ControllerSequence(Node):
         #Topics from sensor processing node
         self.subscription_tip = self.create_subscription(PoseStamped, '/sensor/tip_filtered', self.tip_callback, 10)
         self.subscription_tip  # prevent unused variable warning
-        self.subscription_entry_point = self.create_subscription(PoseStamped, '/subject/state/skin_entry', self.entry_point_callback, 10)
-        self.subscription_entry_point  # prevent unused variable warning
 
         #Topics from robot node
         self.subscription_robot = self.create_subscription(PoseStamped, 'stage/state/pose', self.robot_callback, 10)
@@ -42,18 +38,19 @@ class ControllerSequence(Node):
         # self.target = np.array([[0, 0, 0, 0, -20, -20, -20, -20, -40, -40, -40, -40, -60, -60, -60, -60, -80, -80, -80, -80],
         #                         [0, 2.5, 5, 7.5, 7.5, 5, 2.5, 0, 0, 2.5, 5, 7.5, 7.5, 5, 2.5, 0, 0, 2.5, 5, 7.5]])   
 
-        self.target = np.array([[0, -25, -50],
-                                [0, 0, 0]])   
+        self.target = np.array([[0, -25, -50, -90, 0],
+                                [0, 0, 0, 0, 0]])   
 
 
         # Stored values
-        self.entry_point = np.empty(shape=[2,0])    # Needle tip entry point
-        self.tip = np.empty(shape=[7,0])            # Current needle tip pose
-        self.cmd = np.empty((2,0))                  # Control output to the robot stage
         self.stage_initial = np.empty(shape=[2,0])  # Stage home position
         self.stage = np.empty(shape=[2,0])          # Current stage pose
+        self.tip = np.empty(shape=[7,0])            # Current needle tip pose
+        self.cmd = np.empty((2,0))                  # Control output to the robot stage
         self.robot_idle = False                     # Stage status
         self.next_target = 0                        # Next target number
+        self.current_target = None                  # Sent target number
+        self.sent_cmd = True                        # Current target number
 
     # Get robot pose
     def robot_callback(self, msg_robot):
@@ -72,27 +69,34 @@ class ControllerSequence(Node):
         self.tip = np.array([[tip.position.x, tip.position.y, tip.position.z, \
                                 tip.orientation.w, tip.orientation.x, tip.orientation.y, tip.orientation.z]]).T    
 
-    # Get entry point (only once)
-    def entry_point_callback(self, msg):
-        if (self.entry_point.size == 0):
-            entry_point = msg.pose
-            self.entry_point = np.array([[entry_point.position.x, entry_point.position.y, entry_point.position.z, \
-                                    entry_point.orientation.w, entry_point.orientation.x, entry_point.orientation.y, entry_point.orientation.z]]).T
-
     # Timer to robot control
     def timer_control_robot(self):
         # Robot available
-        if (self.robot_idle == True) and (self.entry_point.size != 0):
-            # Set new target
-            self.cmd = self.target[:,self.next_target]
-            self.send_cmd(self.cmd[0], self.cmd[1])          
-            self.get_logger().info('Sending robot to Target #%i = (%f, %f)' % (self.next_target, self.cmd[0], self.cmd[1]))
-            self.next_target = self.next_target +1
-            # Publish control output
-            msg = PointStamped()
-            msg.point = Point(x=float(self.cmd[0]), z=float(self.cmd[1]))
-            msg.header.stamp = self.get_clock().now().to_msg()
-            self.publisher_control.publish(msg)
+        if (self.robot_idle == True):
+                # Check if finished sequence
+                if (self.next_target+1 >= self.target.shape[1]):
+                    self.get_logger().info('Sequence successfully completed! Press Ctrl + C to quit')
+                    input()
+                else:
+                    # Robot previoulsy sent a sequence point
+                    if (self.current_target != None):
+                        delta_time = self.get_clock().now() - self.time_begin
+                        # Wait a little for Aurora to converge after reaching point
+                        if (delta_time.nanoseconds*1e-9 >= 3.0):
+                            # Select next target
+                            self.next_target = self.next_target +1
+                    if (self.current_target != self.next_target):
+                        # Send command to robot
+                        self.current_target = self.next_target
+                        self.cmd = self.target[:,self.next_target]
+                        self.send_cmd(self.cmd[0], self.cmd[1])          
+                        self.get_logger().info('Sending robot to Target #%i = (%f, %f)' % (self.next_target, self.cmd[0], self.cmd[1]))
+                        
+                        # Publish control output
+                        msg = PointStamped()
+                        msg.point = Point(x=float(self.cmd[0]), z=float(self.cmd[1]))
+                        msg.header.stamp = self.get_clock().now().to_msg()
+                        self.publisher_control.publish(msg)
 
     # Send MoveStage action to Stage
     def send_cmd(self, x, z):
@@ -127,6 +131,7 @@ class ControllerSequence(Node):
         status = future.result().status
         if status == GoalStatus.STATUS_SUCCEEDED:
             self.robot_idle = True
+            self.time_begin = self.get_clock().now()    #begin timer for sending new command
             self.get_logger().info('Goal succeeded! Result: {0}'.format(result.x*1000))
             self.get_logger().info('Tip: (%f, %f, %f)'   % (self.tip[0], self.tip[1], self.tip[2]))
         else:

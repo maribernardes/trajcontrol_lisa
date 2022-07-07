@@ -129,9 +129,9 @@ class SaveFile(Node):
     def control_callback(self,msg):
         self.cmd = [msg.point.x, msg.point.z, int(msg.header.stamp.sec), int(msg.header.stamp.nanosec)]        
 
-    #Get current robot output
+    #Get current robot pose
     def robot_callback(self,msg):
-        self.cmd = [msg.pose.position.x, msg.pose.position.z, int(msg.header.stamp.sec), int(msg.header.stamp.nanosec)]     
+        self.stage = [msg.pose.position.x, msg.pose.position.z, int(msg.header.stamp.sec), int(msg.header.stamp.nanosec)]     
 
     #Save data do file
     def write_file_callback(self):
