@@ -25,7 +25,7 @@ class ControllerSequence(Node):
         self.subscription_robot # prevent unused variable warning
 
         timer_period_control = 0.6  # seconds
-        self.timer = self.create_timer(timer_period_control, self.timer_control_robot)
+        self.timer = self.create_timer(timer_period_control, self.timer_control_robot_callback)
 
         #Published topics
         self.publisher_control = self.create_publisher(PointStamped, '/stage/control/cmd', 10)
@@ -40,9 +40,6 @@ class ControllerSequence(Node):
 
         # self.target = np.array([[-5, -10, -15, -20, -25, -30, 0],
         #                         [0, 0, 0, 0, 0, 0, 0]])   
-
-        self.target = np.array([[-30],
-                                [0]])  
 
         # Stored values
         self.stage_initial = np.empty(shape=[2,0])  # Stage home position
@@ -72,7 +69,7 @@ class ControllerSequence(Node):
                                 tip.orientation.w, tip.orientation.x, tip.orientation.y, tip.orientation.z]]).T    
 
     # Timer to robot control
-    def timer_control_robot(self):
+    def timer_control_robot_callback(self):
         # Robot available
         if (self.robot_idle == True):
                 # Check if finished sequence
