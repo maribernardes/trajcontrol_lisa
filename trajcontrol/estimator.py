@@ -55,8 +55,6 @@ class Estimator(Node):
         # Get filtered sensor in robot frame   
         quat = np.array([msg_tip.pose.orientation.w, msg_tip.pose.orientation.x, msg_tip.pose.orientation.y, msg_tip.pose.orientation.z])
         angles = get_angles(quat)
-        self.get_logger().info('quat = %s' %  (quat))
-        self.get_logger().info('angles: h = %f, v = %f [deg]' %  (math.degrees(angles[0]), math.degrees(angles[1])))
         self.Z = np.array([[msg_tip.pose.position.x, msg_tip.pose.position.y, msg_tip.pose.position.z, angles[0], angles[1]]]).T
         self.TZ = msg_tip.header.stamp
         if (self.Zant.size == 0):
@@ -92,6 +90,7 @@ class Estimator(Node):
                 msg = CvBridge().cv2_to_imgmsg(self.J)
                 msg.header.stamp = self.get_clock().now().to_msg()
                 self.publisher_jacobian.publish(msg)
+                # self.get_logger().info('J = %s' %  self.J)
 
                 # Save previous values for next estimation
                 self.Zant = self.Z

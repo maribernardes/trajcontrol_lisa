@@ -10,10 +10,11 @@ from rclpy.node import Node
 from ros2_igtl_bridge.msg import Transform
 from numpy import asarray, savetxt, loadtxt
 from std_msgs.msg import Int8
-from geometry_msgs.msg import PoseStamped, Point, Quaternion
+from geometry_msgs.msg import PoseStamped, PointStamped, Quaternion, Point
 from scipy.ndimage import median_filter
 
-INSERTION_STEP = 5.0    #5mm insertion step
+INSERTION_STEP = -5.0        # 5mm insertion step
+INSERTION_LENGTH = -100.0    # 10cm insertion length 
 
 class SensorProcessing(Node):
 
@@ -34,11 +35,12 @@ class SensorProcessing(Node):
         self.listen_keyboard = False
 
         #Published topics
-        timer_period_entry = 0.8  # seconds
+        timer_period_entry = 1.0  # seconds
         self.timer = self.create_timer(timer_period_entry, self.timer_entry_point_callback)        
-        self.publisher_entry_point = self.create_publisher(PoseStamped, '/subject/state/skin_entry', 10)
+        self.publisher_entry_point = self.create_publisher(PointStamped, '/subject/state/skin_entry', 10)
+        self.publisher_target = self.create_publisher(PointStamped, '/subject/state/target', 10)
 
-        timer_period_tip = 0.2 # seconds
+        timer_period_tip = 0.25 # seconds
         self.timer = self.create_timer(timer_period_tip, self.timer_tip_callback)
         self.publisher_tip = self.create_publisher(PoseStamped, '/sensor/tip', 10)
 
@@ -99,7 +101,6 @@ class SensorProcessing(Node):
             # Store current base value
             if (self.stage.size != 0):
                 self.X = np.array([self.stage[0], self.depth, self.stage[1]])
-                self.get_logger().info('X = %s' %(self.X))
                 # Publish last base filtered pose in robot frame
                 msg = PoseStamped()
                 msg.header.stamp = self.get_clock().now().to_msg()
@@ -109,8 +110,8 @@ class SensorProcessing(Node):
                 self.publisher_base.publish(msg)
 
     def get_entry_point(self):
-        # Get entry point if nothing was stored
-        if (self.entry_point.size == 0 and self.listen_keyboard == False):
+        # Display message for entry point acquisition
+        if (self.entry_point.size == 0) and (self.listen_keyboard == False):
             #Listen to keyboard
             self.get_logger().info('Please, place the needle at the Entry Point and hit SPACE bar')
             self.listen_keyboard = True
@@ -119,12 +120,14 @@ class SensorProcessing(Node):
     def timer_entry_point_callback(self):
         # Publishes only after experiment started (stored entry point is available)
         if (self.entry_point.size != 0):
-            msg = PoseStamped()
+            msg = PointStamped()
             msg.header.stamp = self.get_clock().now().to_msg()
             msg.header.frame_id = "stage"
-            msg.pose.position = Point(x=self.entry_point[0], y=self.entry_point[1], z=self.entry_point[2])
-            msg.pose.orientation = Quaternion(w=self.entry_point[3], x=self.entry_point[4], y=self.entry_point[5], z=self.entry_point[6])
+            msg.point = Point(x=self.entry_point[0], y=self.entry_point[1], z=self.entry_point[2])
             self.publisher_entry_point.publish(msg)
+            msg.point = Point(x=self.entry_point[0], y=INSERTION_LENGTH, z=self.entry_point[2])
+            self.publisher_target.publish(msg)      #Currently target equals entry point x and z (in the future target will be provided by 3DSlicer)
+            
 
     # Publishes aurora readings filtered and transformed to robot frame
     def timer_tip_callback (self):
@@ -176,7 +179,9 @@ def main(args=None):
         if sensor_processing.entry_point.size == 0: #No entry point yet
             sensor_processing.get_entry_point()
         else:
-            sensor_processing.get_logger().info('Entry Point in (%f, %f, %f)' %(sensor_processing.entry_point[0], sensor_processing.entry_point[1], sensor_processing.entry_point[2]))
+            sensor_processing.get_logger().info('*****EXPERIMENT STARTED*****\nEntry Point in (%f, %f, %f)' %(sensor_processing.entry_point[0], sensor_processing.entry_point[1], sensor_processing.entry_point[2]))
+            sensor_processing.get_logger().info('Depth count: %.1fmm. Please insert %.1fmm, then hit SPACE' % (sensor_processing.depth, INSERTION_STEP))      
+
             break
 
     rclpy.spin(sensor_processing)

@@ -107,12 +107,8 @@ class ControllerSequence(Node):
         goal_msg.eps = 0.0001
         self.get_logger().debug('Send goal request... Control u: x=%f, z=%f' % ((goal_msg.x)*1000, (goal_msg.z)*1000))      
 
-        # Wait for action server
-        self.action_client.wait_for_server()
-        
+        self.action_client.wait_for_server() # Wait for action server 
         self.send_goal_future = self.action_client.send_goal_async(goal_msg)
-        goal_msg.x = goal_msg.x*1000
-        goal_msg.z = goal_msg.z*1000
         self.send_goal_future.add_done_callback(self.goal_response_callback)
 
     # Check if MoveStage action was accepted 
@@ -129,7 +125,7 @@ class ControllerSequence(Node):
         result = future.result().result
         status = future.result().status
         if status == GoalStatus.STATUS_SUCCEEDED:
-            self.robot_idle = True
+            self.robot_idle = True                      #put robot in IDLE state
             self.time_begin = self.get_clock().now()    #begin timer for sending new command
             self.get_logger().info('Goal succeeded! Result: {0}'.format(result.x*1000))
             self.get_logger().info('Tip: (%f, %f, %f)'   % (self.tip[0], self.tip[1], self.tip[2]))
