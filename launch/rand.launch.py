@@ -4,6 +4,8 @@ from ament_index_python.packages import get_package_share_directory
 from launch import LaunchDescription
 from launch_ros.actions import Node
 from launch.substitutions import LaunchConfiguration
+from launch.launch_description_sources import PythonLaunchDescriptionSource
+from launch.actions import IncludeLaunchDescription
 
 import sys
 
@@ -18,6 +20,25 @@ from launch.actions import DeclareLaunchArgument
 
 def generate_launch_description():
 
+    robot = IncludeLaunchDescription(
+            PythonLaunchDescriptionSource(
+                os.path.join(get_package_share_directory('stage_control'), 'launch', 'stage_control_launch.py')
+            ),
+            launch_arguments={
+                'sim_level': '2' 
+            }.items()
+    )
+
+    aurora = Node(
+        package="ros2_igtl_bridge",
+        executable="igtl_node",
+        parameters=[
+            {"RIB_server_ip":"localhost"},
+            {"RIB_port": 18944},
+            {"RIB_type": "client"}
+        ]
+    )
+
     sensor = Node(
         package = "trajcontrol",
         executable = "sensor_processing"
@@ -25,7 +46,7 @@ def generate_launch_description():
 
     controller = Node(
         package="trajcontrol",
-        executable="controller",
+        executable="controller_rand",
     )   
 
     save_file = Node(
@@ -41,6 +62,8 @@ def generate_launch_description():
             description="File name to save .csv file with experimental data"
         ),
         actions.LogInfo(msg=["filename: ", LaunchConfiguration('filename')]),
+        robot,
+        aurora,
         sensor,
         controller,
         save_file,

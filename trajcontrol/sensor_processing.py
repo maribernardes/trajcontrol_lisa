@@ -14,7 +14,7 @@ from geometry_msgs.msg import PoseStamped, PointStamped, Quaternion, Point
 from scipy.ndimage import median_filter
 
 INSERTION_STEP = -5.0        # 5mm insertion step
-INSERTION_LENGTH = -100.0    # 10cm insertion length 
+INSERTION_LENGTH = -20.0    # 10cm insertion length 
 
 class SensorProcessing(Node):
 

@@ -25,11 +25,6 @@ class Controller(Node):
         #Topic from keypress node
         self.subscription_keyboard = self.create_subscription(Int8, '/keyboard/key', self.keyboard_callback, 10)
         self.subscription_keyboard # prevent unused variable warning
-        self.listen_keyboard = False
-
-        #Topics from robot node
-        self.subscription_robot = self.create_subscription(PoseStamped, '/sensor/base', self.robot_callback, 10)
-        self.subscription_robot # prevent unused variable warning
 
         #Topics from estimator node
         self.subscription_estimator = self.create_subscription(PoseStamped, '/needle/state/jacobian', self.robot_callback, 10)
@@ -38,6 +33,8 @@ class Controller(Node):
         #Topics from sensor processing node
         self.subscription_tip = self.create_subscription(PoseStamped, '/sensor/tip', self.tip_callback, 10)
         self.subscription_tip  # prevent unused variable warning
+        self.subscription_robot = self.create_subscription(PoseStamped, '/sensor/base', self.robot_callback, 10)
+        self.subscription_robot # prevent unused variable warning
 
         #Topics from UI (currently sensor processing node is doing the job)
         self.subscription_entry_point = self.create_subscription(PointStamped, '/subject/state/skin_entry', self.entry_callback, 10)
@@ -52,6 +49,9 @@ class Controller(Node):
         #Action client 
         #Check the correct action name and msg type from John's code
         self.action_client = ActionClient(self, MoveStage, '/move_stage')
+
+        #Published topics
+        self.publisher_control = self.create_publisher(PointStamped, '/stage/control/cmd', 10)
 
         # Stored values
         self.entry_point = np.empty(shape=[0,3])    # Entry point
@@ -71,21 +71,20 @@ class Controller(Node):
     def keyboard_callback(self, msg):
         # Check if experiment is ready to begin (tip and target received)
         # Only takes new inputs if robot finished previous action (robot IDLE)
-        if (msg.data == 32) and (self.robot_idle == True) and (self.target.size != 0) and (self.tip.size != 0): # Hit SPACE and robot is free
-            if (abs(self.tip[1]-self.target[1]) <= DEPTH_MARGIN): 
-                self.get_logger().info('ATTENTION: Depth margin reached! Please stop insertion')                
-            else:
-                self.send_cmd()         # Calls routine to calculate and send new control signal
+        if (msg.data == 32) and (self.robot_idle == True) and (self.target.size != 0) and (self.tip.size != 0) and (self.entry_point.size != 0): # Hit SPACE and robot is free
+            self.send_cmd()         # Calls routine to calculate and send new control signal
 
-    # Get current entry point
+    # Get current entry point (only once)
     def entry_callback(self, msg):
-        entry_point = msg.point
-        self.entry_point = np.array([entry_point.x, entry_point.y, entry_point.z])
+        if (self.entry_point.size == 0):
+            entry_point = msg.point
+            self.entry_point = np.array([entry_point.x, entry_point.y, entry_point.z])
 
-    # Get current target
+    # Get current target (only once)
     def target_callback(self, msg):
-        target = msg.point
-        self.target = np.array([target.x, target.y, target.z])
+        if (self.target.size == 0):
+            target = msg.point
+            self.target = np.array([target.x, target.y, target.z])
 
     # Get current tip pose
     def tip_callback(self, msg):
@@ -100,13 +99,15 @@ class Controller(Node):
 
     # Calculates control output and send MoveStage action to robot
     def send_cmd(self):
+        # Reduce Jacobian to use angles as free DOF's for control
         Jc = self.J[0:3,:]
 
-        K = self.get_parameter('K').get_parameter_value().double_value        # Get K value          
+        # Calculate base inputs delta
+        K = self.get_parameter('K').get_parameter_value().double_value       # Get K value          
         error = self.target - self.tip                                       # Calculate control error
-        deltaX = self.stage + K*np.matmul(np.linalg.pinv(Jc), error)          # Calculate control output
-
+        deltaX = self.stage + K*np.matmul(np.linalg.pinv(Jc), error)         # Calculate control output
         self.cmd = self.stage + deltaX
+
         # Limit control output to maximum SAFE_LIMIT[mm] around entry point
         self.cmd[0] = min(self.cmd[0], self.entry_point[0]+SAFE_LIMIT)
         self.cmd[2] = min(self.cmd[2], self.entry_point[2]+SAFE_LIMIT)
@@ -116,7 +117,6 @@ class Controller(Node):
         self.get_logger().info('Applying trajectory compensation... DO NOT insert the needle now\nTip: (%f, %f, %f) \nTarget: (%f, %f, %f) \nError: (%f, %f, %f) \nDeltaX: (%f, %f)' % (self.tip[0],\
              self.tip[1], self.tip[2], self.target[0], self.target[1], self.target[2], error[0], error[1], error[2], deltaX[0], deltaX[2]))    
    
-
         # REMOVE AFTER TESTS
         self.cmd[0] = 0.0
         self.cmd[2] = 0.0
@@ -147,8 +147,13 @@ class Controller(Node):
         status = future.result().status
         if status == GoalStatus.STATUS_SUCCEEDED:
             self.get_logger().debug('Goal succeeded! Result: {0}'.format(result.x))
-            self.robot_idle = True
-            self.get_logger().info('Depth count: %.1fmm. Please insert %.1fmm more, then hit SPACE' % (self.stage[1], INSERTION_STEP))      
+             # Check if max depth reached
+            if (abs(self.tip[1]-self.target[1]) <= DEPTH_MARGIN): 
+                self.robot_idle = False
+                self.get_logger().info('ATTENTION: Depth margin reached! Please stop insertion')                
+            else:
+                self.robot_idle = True
+                self.get_logger().info('Depth count: %.1fmm. Please insert %.1fmm more, then hit SPACE' % (self.stage[1], INSERTION_STEP))      
         else:
             self.get_logger().info('Goal failed with status: {0}'.format(status))
 

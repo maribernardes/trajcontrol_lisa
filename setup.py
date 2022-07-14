@@ -26,11 +26,13 @@ setup(
     entry_points={
         'console_scripts': [
             'keypress = trajcontrol.keypress:main',
-            'registration = trajcontrol.registration:main',
+            'sensor_processing = trajcontrol.sensor_processing:main',
+            'estimator = trajcontrol.estimator:main',
             'controller_manual = trajcontrol.controller_manual:main',
             'controller_sequence = trajcontrol.controller_sequence:main',
+            'controller_rand = trajcontrol.controller_rand:main',
             'controller = trajcontrol.controller:main',
-            'sensor_processing = trajcontrol.sensor_processing:main',
+            'registration = trajcontrol.registration:main',
             'save_file = trajcontrol.save_file:main',
         ],
     },
