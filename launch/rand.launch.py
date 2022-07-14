@@ -44,6 +44,11 @@ def generate_launch_description():
         executable = "sensor_processing"
     )
 
+    estimator = Node(
+        package="trajcontrol",
+        executable="estimator",
+    ) 
+
     controller = Node(
         package="trajcontrol",
         executable="controller_rand",
@@ -65,6 +70,7 @@ def generate_launch_description():
         robot,
         aurora,
         sensor,
+        estimator,
         controller,
         save_file,
     ])
