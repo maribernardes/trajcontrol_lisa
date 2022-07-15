@@ -1,0 +1,57 @@
+ROS1 command line for LISA
+
+
+TO BUILD SYSTEM PACKAGES:
+colcon build --cmake-args -DOpenIGTLink_DIR:PATH=/home/snr/OpenIGTLink-build --symlink-install
+
+
+TO USE DEBUG MODE:
+
+--ros-args --log-level debug
+_______________________________________________________________________________________
+1) Launch robot
+ros2 launch stage_control stage_control_launch.py sim_level:=2
+
+_______________________________________________________________________________________
+2) Move robot to give position (in METERS)
+ros2 action send_goal /move_stage stage_control_interfaces/action/MoveStage "{x: 0.00, z: 0.00, eps: 0.0001}"
+
+EXAMPLE: move to center position
+ros2 action send_goal /move_stage stage_control_interfaces/action/MoveStage "{x: -0.050, z: 0.050, eps: 0.0001}"
+_______________________________________________________________________________________
+3) Send commands (home, zero, ABORT, and any direct command to Newmark controller)
+ros2 service call /stage/controller/command stage_control_interfaces/srv/ControllerCommand "command: home"
+
+_______________________________________________________________________________________
+4) Registration procedure
+	a) Launch PlusServer
+sudo /opt/PlusBuild-bin/bin/./PlusServerLauncher
+	b) Launch registration
+ros2 launch trajcontrol registration.launch.py
+_______________________________________________________________________________________
+5) Estimate initial Jacobian procedure
+	a) Launch PlusServer
+sudo /opt/PlusBuild-bin/bin/./PlusServerLauncher
+	b) Launch sequence
+ros2 launch trajcontrol initJacobian.launch.py insertion_length:=-20.0 filename:=NAME
+_______________________________________________________________________________________
+6) Launch robot in manual mode
+	a) Launch robot in manual
+ros2 launch trajcontrol manual.launch.py
+	b) Launch keyboard node
+ros2 run trajcontrol keypress
+	c) Use numkeyboard arrows to move robot
+_______________________________________________________________________________________
+7) Launch robot sequence with pre-defined robot positions (use for testing)
+	a) Launch PlusServer
+sudo /opt/PlusBuild-bin/bin/./PlusServerLauncher
+	b) Launch sequence
+ros2 launch trajcontrol sequence.launch.py filename:=NAME
+_______________________________________________________________________________________
+8) Launch step-wise compensation
+	a) Launch PlusServer
+sudo /opt/PlusBuild-bin/bin/./PlusServerLauncher
+	b) Launch sequence
+ros2 launch trajcontrol step.launch.py filename:=NAME
+
+
