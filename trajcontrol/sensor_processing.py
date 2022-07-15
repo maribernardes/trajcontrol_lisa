@@ -1,25 +1,24 @@
 import os
 import rclpy
 import numpy as np
-import time
-import keyboard
-import numpy.matlib 
 import quaternion
 
 from rclpy.node import Node
 from ros2_igtl_bridge.msg import Transform
-from numpy import asarray, savetxt, loadtxt
+from numpy import loadtxt
 from std_msgs.msg import Int8
 from geometry_msgs.msg import PoseStamped, PointStamped, Quaternion, Point
 from scipy.ndimage import median_filter
 
 INSERTION_STEP = -5.0        # 5mm insertion step
-INSERTION_LENGTH = -20.0    # 10cm insertion length 
 
 class SensorProcessing(Node):
 
     def __init__(self):
         super().__init__('sensor_processing')
+
+        #Declare node parameters
+        self.declare_parameter('insertion_length', -100.0) #Jacobian update parameter
 
         #Topics from Aurora sensor node (OpenIGTLink Bridge)
         self.subscription_sensor = self.create_subscription(Transform, 'IGTL_TRANSFORM_IN', self.aurora_callback, 10)
@@ -40,7 +39,7 @@ class SensorProcessing(Node):
         self.publisher_entry_point = self.create_publisher(PointStamped, '/subject/state/skin_entry', 10)
         self.publisher_target = self.create_publisher(PointStamped, '/subject/state/target', 10)
 
-        timer_period_tip = 0.25 # seconds
+        timer_period_tip = 0.3 # seconds
         self.timer = self.create_timer(timer_period_tip, self.timer_tip_callback)
         self.publisher_tip = self.create_publisher(PoseStamped, '/sensor/tip', 10)
 
@@ -55,14 +54,13 @@ class SensorProcessing(Node):
 
         #Stored values
         self.entry_point = np.empty(shape=[0,7])    # Tip position at begining of insertion
-
         self.auroraZ = np.empty(shape=[0,7])        # All stored Aurora tip readings as they are sent (for median filter)
         self.Z = np.empty(shape=[0,7])              # Current tip value (filtered) in robot frame
-
         self.stage = np.empty(shape=[0,2])          # Current stage pose
         self.depth = 0.0                            # Current insertion depth
         self.X = np.empty(shape=[0,3])              # Needle base position
-
+        self.insertion_length = self.get_parameter('insertion_length').get_parameter_value().double_value
+        self.get_logger().info('Final insertion length for this trial: %f' %(self.insertion_length))
 
     # Get current robot pose
     def robot_callback(self, msg_robot):
@@ -113,7 +111,8 @@ class SensorProcessing(Node):
         # Display message for entry point acquisition
         if (self.entry_point.size == 0) and (self.listen_keyboard == False):
             #Listen to keyboard
-            self.get_logger().info('Please, place the needle at the Entry Point and hit SPACE bar')
+            self.get_logger().info('REMEMBER: Use another terminal to run keypress node')
+            self.get_logger().info('Place the needle at the Entry Point and hit SPACE bar')
             self.listen_keyboard = True
 
     # Publishes entry point
@@ -125,9 +124,8 @@ class SensorProcessing(Node):
             msg.header.frame_id = "stage"
             msg.point = Point(x=self.entry_point[0], y=self.entry_point[1], z=self.entry_point[2])
             self.publisher_entry_point.publish(msg)
-            msg.point = Point(x=self.entry_point[0], y=INSERTION_LENGTH, z=self.entry_point[2])
+            msg.point = Point(x=self.entry_point[0], y=self.insertion_length, z=self.entry_point[2])
             self.publisher_target.publish(msg)      #Currently target equals entry point x and z (in the future target will be provided by 3DSlicer)
-            
 
     # Publishes aurora readings filtered and transformed to robot frame
     def timer_tip_callback (self):
@@ -185,7 +183,7 @@ def main(args=None):
             break
 
     rclpy.spin(sensor_processing)
-    
+
     # Destroy the node explicitly
     # (optional - otherwise it will be done automatically
     # when the garbage collector destroys the node object)

@@ -63,6 +63,9 @@ def generate_launch_description():
     controller = Node(
         package = "trajcontrol",
         executable = "controller_rand",
+        parameters = [
+            {"insertion_length": LaunchConfiguration('insertion_length')}
+        ]
     )   
 
     # Save data to filename defined by user

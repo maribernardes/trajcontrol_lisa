@@ -1,9 +1,9 @@
 import os
 import rclpy
 import numpy as np
-import time
 import numpy.matlib 
 import quaternion
+import time
 
 from rclpy.action import ActionClient
 from action_msgs.msg import GoalStatus
@@ -12,9 +12,6 @@ from stage_control_interfaces.action import MoveStage
 from rclpy.node import Node
 from ros2_igtl_bridge.msg import Transform
 from numpy import asarray, savetxt, loadtxt
-# from std_msgs.msg import Int8
-# from geometry_msgs.msg import PoseStamped, Point, Quaternion
-# from scipy.ndimage import median_filter
 
 BUFF = 500  #Size of sensor buffer
 

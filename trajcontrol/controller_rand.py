@@ -6,35 +6,27 @@ from rclpy.action import ActionClient
 from action_msgs.msg import GoalStatus
 from std_msgs.msg import Int8
 from geometry_msgs.msg import PoseStamped, PointStamped
-from cv_bridge import CvBridge
-from sensor_msgs.msg import Image
 from stage_control_interfaces.action import MoveStage
 from trajcontrol.sensor_processing import INSERTION_STEP
 
-FINAL_LENGTH = -20.0    # Expected insertion lenght
-DEPTH_MARGIN = 1.5      # Final insertion length margin [mm]
-SAFE_LIMIT = 5.0        # Maximum control output delta from entry point [mm]
+DEPTH_MARGIN = 1.8      # Final insertion length margin [mm]
+SAFE_LIMIT = 4.0        # Maximum control output delta from stage initial position [mm] (in each direction)
 
 class ControllerRand(Node):
 
     def __init__(self):
         super().__init__('controller_rand')
 
+        #Declare node parameters
+        self.declare_parameter('insertion_length', -100.0) #Jacobian update parameter
+
         #Topic from keypress node
         self.subscription_keyboard = self.create_subscription(Int8, '/keyboard/key', self.keyboard_callback, 10)
         self.subscription_keyboard # prevent unused variable warning
         
         #Topics from sensor processing node
-        self.subscription_tip = self.create_subscription(PoseStamped, '/sensor/tip', self.tip_callback, 10)
-        self.subscription_tip  # prevent unused variable warning
         self.subscription_robot = self.create_subscription(PoseStamped, '/sensor/base', self.robot_callback, 10)
         self.subscription_robot # prevent unused variable warning
-
-        #Topics from UI (currently sensor processing node is doing the job)
-        self.subscription_entry_point = self.create_subscription(PointStamped, '/subject/state/skin_entry', self.entry_callback, 10)
-        self.subscription_entry_point  # prevent unused variable warning
-        self.subscription_target = self.create_subscription(PointStamped, '/subject/state/target', self.target_callback, 10)
-        self.subscription_target  # prevent unused variable warning
 
         #Published topics
         self.publisher_control = self.create_publisher(PointStamped, '/stage/control/cmd', 10)
@@ -44,49 +36,35 @@ class ControllerRand(Node):
         self.action_client = ActionClient(self, MoveStage, '/move_stage')
 
         # Stored values
-        self.entry_point = np.empty(shape=[0,3])    # Entry point
         self.target = np.empty(shape=[0,3])         # Target 
-        self.tip = np.empty(shape=[0,3])            # Current needle tip x and z (from aurora)
+        self.stage_initial = np.empty(shape=[0,3])     # Initial stage pose
         self.stage = np.empty(shape=[0,3])          # Current stage pose
         self.cmd = np.zeros((1,3))                  # Control output to the robot stage
         self.depth = 0.0
         self.robot_idle = True                      # Robot free to new command
+        self.insertion_length = self.get_parameter('insertion_length').get_parameter_value().double_value
    
     # A keyboard hotkey was pressed 
     def keyboard_callback(self, msg):
         # Check if experiment is ready to begin (all topics received)
         # Only takes new inputs if robot finished previous action (robot IDLE)
-        if (msg.data == 32) and (self.robot_idle == True) and (self.target.size != 0) and (self.tip.size != 0) and (self.entry_point.size != 0): # Hit SPACE and robot is free
+        if (msg.data == 32) and (self.robot_idle == True) and (self.stage_initial.size != 0): # Hit SPACE and robot is free
             self.send_cmd()         # Calls routine to calculate and send new control signal
-
-    # Get current entry point (only once)
-    def entry_callback(self, msg):
-        if (self.entry_point.size == 0):
-            entry_point = msg.point
-            self.entry_point = np.array([entry_point.x, entry_point.y, entry_point.z])
-
-    # Get current target (only once)
-    def target_callback(self, msg):
-        if (self.target.size == 0):
-            target = msg.point
-            self.target = np.array([target.x, target.y, target.z])
-
-    # Get current tip pose
-    def tip_callback(self, msg):
-        tip = msg.pose
-        self.tip = np.array([tip.position.x, tip.position.y, tip.position.z])
 
     # Get current base pose
     def robot_callback(self, msg_robot):
         robot = msg_robot.pose
         self.stage = np.array([robot.position.x, robot.position.y, robot.position.z])
         self.depth = robot.position.y
+        if (self.stage_initial.size == 0):
+            self.stage_initial = np.array([robot.position.x, robot.position.y, robot.position.z])
+            self.get_logger().info('Stage initial: (%f, %f, %f) ' % (self.stage_initial[0], self.stage_initial[1], self.stage_initial[2]))
 
     # Send MoveStage action to robot
     def send_cmd(self):
         # Calculate control output
         new_rand = np.random.uniform(-SAFE_LIMIT, SAFE_LIMIT, 3)
-        self.cmd = self.entry_point + new_rand
+        self.cmd = self.stage_initial + new_rand
 
         # Test for stage limits
         self.cmd[0] = min(self.cmd[0], 0.0)
@@ -128,9 +106,9 @@ class ControllerRand(Node):
         result = future.result().result
         status = future.result().status
         if status == GoalStatus.STATUS_SUCCEEDED:
-            self.get_logger().info('Goal succeeded! Result: %f, %f' %(result.x, result.z))
+            self.get_logger().info('Goal succeeded! Result: %f, %f' %(result.x*1000, result.z*1000))
             # Check if max depth reached
-            if (abs(self.tip[1]-self.target[1]) <= DEPTH_MARGIN): 
+            if (abs(self.depth-self.insertion_length) <= DEPTH_MARGIN): 
                 self.robot_idle = False
                 self.get_logger().info('ATTENTION: Depth margin reached! Please stop insertion')                
             else:

@@ -11,7 +11,7 @@ from std_msgs.msg import Int8
 from stage_control_interfaces.action import MoveStage
 from trajcontrol.sensor_processing import INSERTION_STEP
 
-SAFE_LIMIT = 5.0    # Maximum control output delta from entry point [mm]
+SAFE_LIMIT = 6.0    # Maximum control output delta from entry point [mm]
 DEPTH_MARGIN = 1.5   # Final insertion length margin [mm]
 
 class Controller(Node):
@@ -20,7 +20,7 @@ class Controller(Node):
         super().__init__('controller')
 
         #Declare node parameters
-        self.declare_parameter('K', 0.001) #Controller gain
+        self.declare_parameter('K', 0.01) #Controller gain
 
         #Topic from keypress node
         self.subscription_keyboard = self.create_subscription(Int8, '/keyboard/key', self.keyboard_callback, 10)
@@ -37,8 +37,6 @@ class Controller(Node):
         self.subscription_robot # prevent unused variable warning
 
         #Topics from UI (currently sensor processing node is doing the job)
-        self.subscription_entry_point = self.create_subscription(PointStamped, '/subject/state/skin_entry', self.entry_callback, 10)
-        self.subscription_entry_point  # prevent unused variable warning
         self.subscription_target = self.create_subscription(PointStamped, '/subject/state/target', self.target_callback, 10)
         self.subscription_target  # prevent unused variable warning
 
@@ -54,10 +52,10 @@ class Controller(Node):
         self.publisher_control = self.create_publisher(PointStamped, '/stage/control/cmd', 10)
 
         # Stored values
-        self.entry_point = np.empty(shape=[0,3])    # Entry point
         self.target = np.empty(shape=[0,3])         # Target 
         self.tip = np.empty(shape=[0,3])            # Current needle tip x and z (from aurora)
-        self.stage = np.empty(shape=[0,3])          # Current stage pose
+        self.stage_initial = np.empty(shape=[0,3])     # Stage initial position
+        self.stage = np.empty(shape=[0,3])          # Current stage position
         self.cmd = np.zeros((1,3))                  # Control output to the robot stage
         self.depth = 0.0                            # Current insertion depth
         self.robot_idle = True                     # Stage move action status
@@ -66,19 +64,15 @@ class Controller(Node):
                     (-0.3769, 0.1906, 0.2970),
                     ( 0.0004,-0.0005, 0.0015),
                     ( 0.0058,-0.0028,-0.0015)])
+        self.K = self.get_parameter('K').get_parameter_value().double_value      # Get K value          
+        self.get_logger().info('K for this trial: %f' %(self.K))
 
     # A keyboard hotkey was pressed 
     def keyboard_callback(self, msg):
-        # Check if experiment is ready to begin (tip and target received)
+        # Check if experiment is ready to begin (topics received)
         # Only takes new inputs if robot finished previous action (robot IDLE)
-        if (msg.data == 32) and (self.robot_idle == True) and (self.target.size != 0) and (self.tip.size != 0) and (self.entry_point.size != 0): # Hit SPACE and robot is free
+        if (msg.data == 32) and (self.robot_idle == True) and (self.target.size != 0) and (self.tip.size != 0) and (self.stage_initial.size != 0): # Hit SPACE and robot is free
             self.send_cmd()         # Calls routine to calculate and send new control signal
-
-    # Get current entry point (only once)
-    def entry_callback(self, msg):
-        if (self.entry_point.size == 0):
-            entry_point = msg.point
-            self.entry_point = np.array([entry_point.x, entry_point.y, entry_point.z])
 
     # Get current target (only once)
     def target_callback(self, msg):
@@ -96,6 +90,10 @@ class Controller(Node):
         robot = msg_robot.pose
         self.stage = np.array([robot.position.x, robot.position.y, robot.position.z])
         self.depth = robot.position.y
+        if (self.stage_initial.size == 0):
+            self.stage_initial = np.array([robot.position.x, robot.position.y, robot.position.z])
+            self.get_logger().info('Stage initial: (%f, %f, %f) ' % (self.stage_initial[0], self.stage_initial[1], self.stage_initial[2]))
+
 
     # Calculates control output and send MoveStage action to robot
     def send_cmd(self):
@@ -103,23 +101,28 @@ class Controller(Node):
         Jc = self.J[0:3,:]
 
         # Calculate base inputs delta
-        K = self.get_parameter('K').get_parameter_value().double_value       # Get K value          
-        error = self.target - self.tip                                       # Calculate control error
-        deltaX = self.stage + K*np.matmul(np.linalg.pinv(Jc), error)         # Calculate control output
-        self.cmd = self.stage + deltaX
+        error = self.target - self.tip                           # Calculate control error
+        deltaU = self.K*np.matmul(np.linalg.pinv(Jc), error)     # Calculate control output
+        self.cmd = self.stage + deltaU
 
-        # Limit control output to maximum SAFE_LIMIT[mm] around entry point
-        self.cmd[0] = min(self.cmd[0], self.entry_point[0]+SAFE_LIMIT)
-        self.cmd[2] = min(self.cmd[2], self.entry_point[2]+SAFE_LIMIT)
-        self.cmd[0] = max(self.cmd[0], self.entry_point[0]-SAFE_LIMIT)
-        self.cmd[2] = max(self.cmd[2], self.entry_point[2]-SAFE_LIMIT)
+        # Limit control output to maximum SAFE_LIMIT[mm] around entry stage_initial
+        self.cmd[0] = min(self.cmd[0], self.stage_initial[0]+SAFE_LIMIT)
+        self.cmd[0] = max(self.cmd[0], self.stage_initial[0]-SAFE_LIMIT)
+        self.cmd[2] = min(self.cmd[2], self.stage_initial[2]+SAFE_LIMIT)
+        self.cmd[2] = max(self.cmd[2], self.stage_initial[2]-SAFE_LIMIT)
 
-        self.get_logger().info('Applying trajectory compensation... DO NOT insert the needle now\nTip: (%f, %f, %f) \nTarget: (%f, %f, %f) \nError: (%f, %f, %f) \nDeltaX: (%f, %f)' % (self.tip[0],\
-             self.tip[1], self.tip[2], self.target[0], self.target[1], self.target[2], error[0], error[1], error[2], deltaX[0], deltaX[2]))    
-   
-        # REMOVE AFTER TESTS
-        self.cmd[0] = 0.0
-        self.cmd[2] = 0.0
+        # Test for stage limits
+        self.cmd[0] = min(self.cmd[0], 0.0)
+        self.cmd[0] = max(self.cmd[0], -90.0)
+        self.cmd[2] = min(self.cmd[2], 90.0)
+        self.cmd[2] = max(self.cmd[2], 0.0)
+
+        # # TO MAKE INSERTIONS WITHOUT COMPENSATION (DELETE AFTER)
+        # self.cmd[0] = self.stage_initial[0]
+        # self.cmd[2] = self.stage_initial[2]
+
+        self.get_logger().info('Applying trajectory compensation... DO NOT insert the needle now\nTip: (%f, %f, %f) \nTarget: (%f, %f, %f) \nError: (%f, %f, %f) \nDeltaU: (%f, %f)' % (self.tip[0],\
+             self.tip[1], self.tip[2], self.target[0], self.target[1], self.target[2], error[0], error[1], error[2], deltaU[0], deltaU[2]))    
 
         # Send command to stage
         self.robot_idle = False
@@ -146,7 +149,8 @@ class Controller(Node):
         result = future.result().result
         status = future.result().status
         if status == GoalStatus.STATUS_SUCCEEDED:
-            self.get_logger().debug('Goal succeeded! Result: {0}'.format(result.x))
+            self.get_logger().info('Goal succeeded! Result: %f, %f' %(result.x*1000, result.z*1000))
+            self.get_logger().info('Tip: (%f, %f, %f)'   % (self.tip[0], self.tip[1], self.tip[2]))
              # Check if max depth reached
             if (abs(self.tip[1]-self.target[1]) <= DEPTH_MARGIN): 
                 self.robot_idle = False
@@ -155,7 +159,7 @@ class Controller(Node):
                 self.robot_idle = True
                 self.get_logger().info('Depth count: %.1fmm. Please insert %.1fmm more, then hit SPACE' % (self.stage[1], INSERTION_STEP))      
         else:
-            self.get_logger().info('Goal failed with status: {0}'.format(status))
+            self.get_logger().info('Goal failed with status: %s' %(result.status))
 
 
 def main(args=None):

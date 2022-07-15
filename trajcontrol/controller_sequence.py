@@ -1,5 +1,4 @@
 import rclpy
-import time
 import numpy as np
 
 from rclpy.node import Node
@@ -7,8 +6,6 @@ from rclpy.action import ActionClient
 from action_msgs.msg import GoalStatus
 
 from geometry_msgs.msg import PoseStamped, PointStamped, Point
-from cv_bridge import CvBridge
-from sensor_msgs.msg import Image
 from stage_control_interfaces.action import MoveStage
 
 class ControllerSequence(Node):
@@ -127,10 +124,10 @@ class ControllerSequence(Node):
         if status == GoalStatus.STATUS_SUCCEEDED:
             self.robot_idle = True                      #put robot in IDLE state
             self.time_begin = self.get_clock().now()    #begin timer for sending new command
-            self.get_logger().info('Goal succeeded! Result: {0}'.format(result.x*1000))
+            self.get_logger().info('Goal succeeded! Result: %f, %f' %(result.x*1000, result.z*1000))
             self.get_logger().info('Tip: (%f, %f, %f)'   % (self.tip[0], self.tip[1], self.tip[2]))
         else:
-            self.get_logger().info('Goal failed with status: {0}'.format(status))
+            self.get_logger().info('Goal failed with status: %s' %(result.status))
 
 
 def main(args=None):
