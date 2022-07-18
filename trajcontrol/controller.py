@@ -117,9 +117,9 @@ class Controller(Node):
         self.cmd[2] = min(self.cmd[2], 90.0)
         self.cmd[2] = max(self.cmd[2], 0.0)
 
-        # # TO MAKE INSERTIONS WITHOUT COMPENSATION (DELETE AFTER)
-        # self.cmd[0] = self.stage_initial[0]
-        # self.cmd[2] = self.stage_initial[2]
+        # TO MAKE INSERTIONS WITHOUT COMPENSATION (DELETE AFTER)
+        self.cmd[0] = self.stage_initial[0]
+        self.cmd[2] = self.stage_initial[2]
 
         self.get_logger().info('Applying trajectory compensation... DO NOT insert the needle now\nTip: (%f, %f, %f) \nTarget: (%f, %f, %f) \nError: (%f, %f, %f) \nDeltaU: (%f, %f)' % (self.tip[0],\
              self.tip[1], self.tip[2], self.target[0], self.target[1], self.target[2], error[0], error[1], error[2], deltaU[0], deltaU[2]))    
@@ -134,6 +134,13 @@ class Controller(Node):
         self.action_client.wait_for_server() # Waiting for action server        
         self.send_goal_future = self.action_client.send_goal_async(goal_msg)
         self.send_goal_future.add_done_callback(self.goal_response_callback)
+
+        # Publish cmd
+        msg = PointStamped()
+        msg.header.stamp = self.get_clock().now().to_msg()
+        msg.header.frame_id = "stage"
+        msg.point = Point(x=self.cmd[0], y=self.cmd[1], z=self.cmd[2])
+        self.publisher_control.publish(msg)
 
     # Check if MoveStage action was accepted 
     def goal_response_callback(self, future):

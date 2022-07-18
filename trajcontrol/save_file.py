@@ -51,7 +51,7 @@ class SaveFile(Node):
         self.subscription_robot # prevent unused variable warning
 
         #Published topics
-        timer_period = 0.2  # seconds
+        timer_period = 0.5  # seconds
         self.timer = self.create_timer(timer_period, self.write_file_callback)
 
         #Array of data
@@ -68,7 +68,7 @@ class SaveFile(Node):
             'J30', 'J31', 'J32', \
             'J40', 'J41', 'J42', 'J sec', 'J nanosec', \
             'Control x', 'Control y', 'Control z', 'Control sec', 'Control nanosec', \
-            'Robot x', 'Robot y', 'Robot z', 'Robot sec', 'Robot nanosec'
+            'Robot x', 'Robot z', 'Robot sec', 'Robot nanosec'
         ]
         
         with open(self.filename, 'w', newline='', encoding='UTF8') as f: # open the file in the write mode
@@ -76,20 +76,20 @@ class SaveFile(Node):
             writer.writerow(header) # write a row to the csv file
 
         #Last data received
-        self.target = [0,0,0, 0,0]                  #target point + sec nanosec
-        self.entry_point = [0,0,0, 0,0]             #skin entry point + sec nanosec
-        self.aurora_tip = [0,0,0,0,0,0,0, 0,0]      #aurora tip data + sec nanosec
-        self.aurora_base = [0,0,0,0,0,0,0, 0,0]     #aurora base data + sec nanosec
-        self.Z = [0,0,0,0,0,0,0, 0,0]       #/sensor/tip_filtered (filtered and transformed to robot frame)
-        self.X = [0,0,0,0,0,0,0, 0,0]       #/robot/needle_pose (transformed to robot frame)
+        self.target = [0,0,0, 0,0]                  #target point + sec nanosec (sensor_processing - UI)
+        self.entry_point = [0,0,0, 0,0]             #skin entry point + sec nanosec (sensor_processing - UI)
+        self.aurora_tip = [0,0,0,0,0,0,0, 0,0]      #aurora tip data + sec nanosec (igtl_node)
+        self.aurora_base = [0,0,0,0,0,0,0, 0,0]     #aurora base data + sec nanosec (igtl_node) - EMPTY for now
+        self.tip = [0,0,0,0,0,0,0, 0,0]        #/sensor/tip (x, y, z, qw, qx, qy, qz) + sec nanosec (sensor_processing)
+        self.base = [0,0,0,0,0,0,0, 0,0]       #/sensor/base (x, y(depth), z, 1, 0, 0, 0) + sec nanosec (sensor_processing)
         self.J = [0,0,0, \
                   0,0,0, \
                   0,0,0, \
                   0,0,0, \
-                  0,0,0]            #Jacobian matrix
-        self.Jtime = [0,0]          #Jacobian sec nanosec
-        self.cmd = [0,0,0, 0,0]       #Control output (x,y,z) + sec nanosec
-        self.stage = [0,0,0, 0,0]     #Robot output (x,y,z) + sec nanosec
+                  0,0,0]            # /needle/state/jacobian Matrix (estimator)
+        self.Jtime = [0,0]          # Jacobian sec nanosec
+        self.cmd = [0,0,0, 0,0]     # /stage/control/cmd (x,y,z) + sec nanosec (sensor_processing)
+        self.stage = [0,0, 0,0]     # stage/state/pose (x,z) + sec nanosec  (stage_control)
         self.get_logger().info('Log data will be saved at %s' %(self.filename))   
 
 
@@ -115,29 +115,32 @@ class SaveFile(Node):
     #Get current Z (filtered and in robot frame)
     def sensortip_callback(self, msg):
         tip = msg.pose
-        self.Z = [tip.position.x, tip.position.y, tip.position.z, \
+        self.tip = [tip.position.x, tip.position.y, tip.position.z, \
             tip.orientation.w, tip.orientation.x, tip.orientation.y, tip.orientation.z, int(msg.header.stamp.sec), int(msg.header.stamp.nanosec)]
-        #self.get_logger().info('Received Z = %s in %s frame' % (self.Z, msg.header.frame_id))
+        # self.get_logger().info('Received tip = %s in %s frame' % (self.tip, msg.header.frame_id))
 
     #Get current X
     def sensorbase_callback(self, msg):
         base = msg.pose
-        self.X = [base.position.x, base.position.y, base.position.z, \
+        self.base = [base.position.x, base.position.y, base.position.z, \
             base.orientation.w, base.orientation.x, base.orientation.y, base.orientation.z, int(msg.header.stamp.sec), int(msg.header.stamp.nanosec)]
-        #self.get_logger().info('Received X = %s in %s frame' % (self.X, msg.header.frame_id))
+        # self.get_logger().info('Received base = %s in %s frame' % (self.base, msg.header.frame_id))
         
     #Get current J
     def estimator_callback(self,msg):
         self.J = np.array(CvBridge().imgmsg_to_cv2(msg)).flatten()
         self.Jtime = [int(msg.header.stamp.sec), int(msg.header.stamp.nanosec)]
+        # self.get_logger().info('Received J' % (self.J))
 
     #Get current control output
     def control_callback(self,msg):
         self.cmd = [msg.point.x, msg.point.y, msg.point.z, int(msg.header.stamp.sec), int(msg.header.stamp.nanosec)]        
+        # self.get_logger().info('Received cmd' % (self.cmd))
 
     #Get current robot pose
     def robot_callback(self,msg):
-        self.stage = [msg.pose.position.x, msg.pose.position.y, msg.pose.position.z, int(msg.header.stamp.sec), int(msg.header.stamp.nanosec)]     
+        self.stage = [msg.pose.position.x, msg.pose.position.z, int(msg.header.stamp.sec), int(msg.header.stamp.nanosec)]     
+        # self.get_logger().info('Received stage' % (self.stage))
 
     #Save data do file
     def write_file_callback(self):
@@ -147,16 +150,16 @@ class SaveFile(Node):
             self.target[0], self.target[1], self.target[2], self.target[3], self.target[4],\
             self.entry_point[0], self.entry_point[1], self.entry_point[2], self.entry_point[3], self.entry_point[4],\
             self.aurora_tip[0], self.aurora_tip[1], self.aurora_tip[2], self.aurora_tip[3], self.aurora_tip[4], self.aurora_tip[5], self.aurora_tip[6], self.aurora_tip[7], self.aurora_tip[8], \
-            self.Z[0], self.Z[1], self.Z[2], self.Z[3], self.Z[4], self.Z[5], self.Z[6], self.Z[7], self.Z[8], \
+            self.tip[0], self.tip[1], self.tip[2], self.tip[3], self.tip[4], self.tip[5], self.tip[6], self.tip[7], self.tip[8], \
             self.aurora_base[0], self.aurora_base[1], self.aurora_base[2], self.aurora_base[3], self.aurora_base[4], self.aurora_base[5], self.aurora_base[6], self.aurora_base[7], self.aurora_base[8],\
-            self.X[0], self.X[1], self.X[2], self.X[3], self.X[4], self.X[5], self.X[6], self.X[7], self.X[8],\
+            self.base[0], self.base[1], self.base[2], self.base[3], self.base[4], self.base[5], self.base[6], self.base[7], self.base[8],\
             self.J[0], self.J[1], self.J[2], \
             self.J[3], self.J[4], self.J[5], \
             self.J[6], self.J[7], self.J[8], \
             self.J[9], self.J[10], self.J[11], \
             self.J[12], self.J[13], self.J[14], self.Jtime[0] , self.Jtime[1], \
             self.cmd[0], self.cmd[1], self.cmd[2], self.cmd[3], self.cmd[4], \
-            self.stage[0], self.stage[1], self.stage[2], self.stage[3], self.stage[4] \
+            self.stage[0], self.stage[1], self.stage[2], self.stage[3], \
             ]
         
         with open(self.filename, 'a', newline='', encoding='UTF8') as f: # open the file in append mode
