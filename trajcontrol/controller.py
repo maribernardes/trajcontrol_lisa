@@ -20,7 +20,7 @@ class Controller(Node):
         super().__init__('controller')
 
         #Declare node parameters
-        self.declare_parameter('K', 0.01) #Controller gain
+        self.declare_parameter('K', 1) #Controller gain
 
         #Topic from keypress node
         self.subscription_keyboard = self.create_subscription(Int8, '/keyboard/key', self.keyboard_callback, 10)
@@ -101,8 +101,8 @@ class Controller(Node):
         Jc = self.J[0:3,:]
 
         # Calculate base inputs delta
-        error = self.target - self.tip                           # Calculate control error
-        deltaU = self.K*np.matmul(np.linalg.pinv(Jc), error)     # Calculate control output
+        error = self.tip - self.target                          # Calculate control error
+        deltaU = self.K*np.matmul(np.linalg.pinv(Jc), error)    # Calculate control output
         self.cmd = self.stage + deltaU
 
         # Limit control output to maximum SAFE_LIMIT[mm] around entry stage_initial
