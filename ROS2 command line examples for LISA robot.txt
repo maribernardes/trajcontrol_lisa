@@ -33,7 +33,7 @@ ________________________________________________________________________________
 	a) Launch PlusServer
 sudo /opt/PlusBuild-bin/bin/./PlusServerLauncher
 	b) Launch sequence
-ros2 launch trajcontrol initJacobian.launch.py insertion_length:=-20.0 filename:=NAME
+ros2 launch trajcontrol init_jacobian.launch.py insertion_length:=-20.0 filename:=NAME
 _______________________________________________________________________________________
 6) Launch robot in manual mode
 	a) Launch robot in manual
@@ -52,6 +52,6 @@ ________________________________________________________________________________
 	a) Launch PlusServer
 sudo /opt/PlusBuild-bin/bin/./PlusServerLauncher
 	b) Launch sequence
-ros2 launch trajcontrol step.launch.py filename:=NAME
-
+ros2 launch trajcontrol step.launch.py K:=0.5 filename:=NAME 
+ 
 

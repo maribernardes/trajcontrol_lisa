@@ -130,7 +130,7 @@ class SaveFile(Node):
     def estimator_callback(self,msg):
         self.J = np.array(CvBridge().imgmsg_to_cv2(msg)).flatten()
         self.Jtime = [int(msg.header.stamp.sec), int(msg.header.stamp.nanosec)]
-        # self.get_logger().info('Received J' % (self.J))
+        # self.get_logger().info('Received J = %s' % (self.J))
 
     #Get current control output
     def control_callback(self,msg):

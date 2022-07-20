@@ -1,3 +1,4 @@
+import os
 import rclpy
 import math
 import numpy as np
@@ -8,6 +9,7 @@ from geometry_msgs.msg import PoseStamped
 from sensor_msgs.msg import Image
 from cv_bridge import CvBridge
 from cv_bridge.core import CvBridge
+from numpy import loadtxt, asarray, savetxt
 
 class Estimator(Node):
 
@@ -15,7 +17,8 @@ class Estimator(Node):
         super().__init__('estimator')
 
         #Declare node parameters
-        self.declare_parameter('alpha', 0.65) #Jacobian update parameter
+        self.declare_parameter('alpha', 0.65)   #Jacobian update parameter
+        self.declare_parameter('save_J', False) #Save Jacobian matrix in file
 
         #Topics from sensor processing node
         self.subscription_tip = self.create_subscription(PoseStamped, '/sensor/tip', self.tip_callback, 10)
@@ -33,13 +36,12 @@ class Estimator(Node):
         # Print numpy floats with only 3 decimal places
         np.set_printoptions(formatter={'float': lambda x: "{0:0.4f}".format(x)})
 
-        # Initialize Jacobian with estimated values from previous experiments
-        # (Alternative: initialize with values from first two sets of sensor and robot data)
-        self.J = np.array([(0.9906,-0.1395,-0.5254),
-                    ( 0.0588, 1.7334,-0.1336),
-                    (-0.3769, 0.1906, 0.2970),
-                    ( 0.0004,-0.0005, 0.0015),
-                    ( 0.0058,-0.0028,-0.0015)])
+        # Load initial Jacobian from file
+        try:
+            self.J = np.array(loadtxt(os.path.join(os.getcwd(),'src','trajcontrol','files','jacobian.csv'), delimiter=','))
+        except IOError:
+            self.get_logger().info('Could not find initial jacobian.csv file')
+
         self.Z = np.empty(shape=[5,0])                  # Current needle tip pose Z = [x_tip, y_tip, z_tip, yaw, pitch] 
         self.X = np.empty(shape=[3,0])                  # Current needle base pose X = [x_robot, y_needle_depth, z_robot]
         self.Xant = np.empty(shape=[3,0])               # Previous X 
@@ -48,7 +50,14 @@ class Estimator(Node):
         self.TZ = self.get_clock().now().to_msg()       # Current Z instant (time)        
         self.TXant = self.TX                            # Previous X instant (time)
         self.TZant = self.TZ                            # Previous Z instant (time)
-        
+
+        self.alpha = self.get_parameter('alpha').get_parameter_value().double_value
+        self.save_J = self.get_parameter('save_J').get_parameter_value().bool_value
+        if (self.save_J == True):
+            self.get_logger().info('This trial will overwrite initial Jacobian file')
+        else:
+            self.get_logger().info('This trial will NOT overwrite initial Jacobian file')
+
     # Get current needle tip from sensor processing node
     # Z = [x_tip, y_tip, z_tip, yaw, pitch]  
     def tip_callback(self, msg_tip):
@@ -78,25 +87,28 @@ class Estimator(Node):
             deltaTX = ((self.TX.sec*1e9 + self.TX.nanosec) - (self.TXant.sec*1e9 + self.TXant.nanosec))*1e-9    
             deltaTZ = ((self.TZ.sec*1e9 + self.TZ.nanosec) - (self.TZant.sec*1e9 + self.TZant.nanosec))*1e-9    
 
-            # Do Jacobian calculation only when current and previous are different
+            # Do Jacobian update only when current and previous X/Z are different
             if (deltaTX != 0) and (deltaTZ != 0):
                 deltaX = (self.X - self.Xant)/deltaTX
                 deltaZ = (self.Z - self.Zant)/deltaTZ
                 # Update Jacobian
-                alpha = self.get_parameter('alpha').get_parameter_value().double_value
-                self.J = self.J + alpha*np.outer((deltaZ-np.matmul(self.J, deltaX))/(np.matmul(np.transpose(deltaX), deltaX)+1e-9), deltaX)
-
-                # Publish new Jacobian
-                msg = CvBridge().cv2_to_imgmsg(self.J)
-                msg.header.stamp = self.get_clock().now().to_msg()
-                self.publisher_jacobian.publish(msg)
-                # self.get_logger().info('J = %s' %  self.J)
+                self.J = self.J + self.alpha*np.outer((deltaZ-np.matmul(self.J, deltaX))/(np.matmul(np.transpose(deltaX), deltaX)+1e-9), deltaX)
 
                 # Save previous values for next estimation
                 self.Zant = self.Z
                 self.TZant = self.TZ
                 self.Xant = self.X
                 self.TXant = self.TX
+
+                # Save updated Jacobian in file
+                if (self.save_J == True):
+                    self.get_logger().debug('Save Jacobian transform %s' %(self.J))
+                    savetxt(os.path.join(os.getcwd(),'src','trajcontrol','files','jacobian.csv'), asarray(self.J), delimiter=',')
+
+            # Publish current Jacobian
+            msg = CvBridge().cv2_to_imgmsg(self.J)
+            msg.header.stamp = self.get_clock().now().to_msg()
+            self.publisher_jacobian.publish(msg)
 
 ########################################################################
 ### Auxiliar functions ###
