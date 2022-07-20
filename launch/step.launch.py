@@ -63,6 +63,7 @@ def generate_launch_description():
     controller = Node(
         package = "trajcontrol",
         executable = "controller",
+        parameters =[{"K": LaunchConfiguration('K')}]
     )   
 
     # Save data to filename defined by user
@@ -79,6 +80,12 @@ def generate_launch_description():
             description = "File name to save .csv file with experimental data"
         ),
         actions.LogInfo(msg = ["filename: ", LaunchConfiguration('filename')]),
+        DeclareLaunchArgument(
+            "K",
+            default_value = "0.5",
+            description = "Control gain"
+        ),
+        actions.LogInfo(msg = ["K: ", LaunchConfiguration('K')]),
         robot,
         aurora,
         sensor,

@@ -20,7 +20,7 @@ class Controller(Node):
         super().__init__('controller')
 
         #Declare node parameters
-        self.declare_parameter('K', 1) #Controller gain
+        self.declare_parameter('K', 0.1) #Controller gain
 
         #Topic from keypress node
         self.subscription_keyboard = self.create_subscription(Int8, '/keyboard/key', self.keyboard_callback, 10)
@@ -117,12 +117,14 @@ class Controller(Node):
         self.cmd[2] = min(self.cmd[2], 90.0)
         self.cmd[2] = max(self.cmd[2], 0.0)
 
-        # TO MAKE INSERTIONS WITHOUT COMPENSATION (DELETE AFTER)
-        self.cmd[0] = self.stage_initial[0]
-        self.cmd[2] = self.stage_initial[2]
+        # # TO MAKE INSERTIONS WITHOUT COMPENSATION (DELETE AFTER)
+        # self.cmd[0] = self.stage_initial[0]
+        # self.cmd[2] = self.stage_initial[2]
 
-        self.get_logger().info('Applying trajectory compensation... DO NOT insert the needle now\nTip: (%f, %f, %f) \nTarget: (%f, %f, %f) \nError: (%f, %f, %f) \nDeltaU: (%f, %f)' % (self.tip[0],\
-             self.tip[1], self.tip[2], self.target[0], self.target[1], self.target[2], error[0], error[1], error[2], deltaU[0], deltaU[2]))    
+        self.get_logger().info('Applying trajectory compensation... DO NOT insert the needle now\nTip: (%f, %f, %f) \
+            \nTarget: (%f, %f, %f) \nError: (%f, %f, %f) \nDeltaU: (%f, %f)  \nCmd: (%f, %f) \nStage: (%f, %f)' % (self.tip[0],\
+            self.tip[1], self.tip[2], self.target[0], self.target[1], self.target[2], error[0], error[1], error[2],\
+            deltaU[0], deltaU[2], self.cmd[0], self.cmd[2], self.stage[0], self.stage[2]))    
 
         # Send command to stage
         self.robot_idle = False
