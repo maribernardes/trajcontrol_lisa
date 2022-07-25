@@ -109,6 +109,8 @@ class Estimator(Node):
             msg = CvBridge().cv2_to_imgmsg(self.J)
             msg.header.stamp = self.get_clock().now().to_msg()
             self.publisher_jacobian.publish(msg)
+            # self.get_logger().info('Publish J = %s' %(self.J))
+
 
 ########################################################################
 ### Auxiliar functions ###

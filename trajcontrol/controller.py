@@ -5,7 +5,8 @@ import math
 from rclpy.node import Node
 from rclpy.action import ActionClient
 from action_msgs.msg import GoalStatus
-
+from cv_bridge import CvBridge
+from sensor_msgs.msg import Image
 from geometry_msgs.msg import PoseStamped, PointStamped, Point
 from std_msgs.msg import Int8
 from stage_control_interfaces.action import MoveStage
@@ -41,7 +42,7 @@ class Controller(Node):
         self.subscription_target  # prevent unused variable warning
 
         #Topics from estimator node
-        self.subscription_jacobian = self.create_subscription(PoseStamped, '/needle/state/jacobian', self.tip_callback, 10)
+        self.subscription_jacobian = self.create_subscription(Image, '/needle/state/jacobian', self.jacobian_callback, 10)
         self.subscription_jacobian  # prevent unused variable warning
 
         #Action client 
@@ -58,12 +59,8 @@ class Controller(Node):
         self.stage = np.empty(shape=[0,3])          # Current stage position
         self.cmd = np.zeros((1,3))                  # Control output to the robot stage
         self.depth = 0.0                            # Current insertion depth
-        self.robot_idle = True                     # Stage move action status
-        self.J = np.array([(0.9906,-0.1395,-0.5254),
-                    ( 0.0588, 1.7334,-0.1336),
-                    (-0.3769, 0.1906, 0.2970),
-                    ( 0.0004,-0.0005, 0.0015),
-                    ( 0.0058,-0.0028,-0.0015)])
+        self.robot_idle = True                      # Stage move action status
+        self.J = np.zeros((5,3))
         self.K = self.get_parameter('K').get_parameter_value().double_value      # Get K value          
         self.get_logger().info('K for this trial: %f' %(self.K))
 
@@ -74,6 +71,10 @@ class Controller(Node):
         if (msg.data == 32) and (self.robot_idle == True) and (self.target.size != 0) and (self.tip.size != 0) and (self.stage_initial.size != 0): # Hit SPACE and robot is free
             self.send_cmd()         # Calls routine to calculate and send new control signal
 
+    # Get current Jacobian matrix from Estimator node
+    def jacobian_callback(self, msg):
+        self.J = np.asarray(CvBridge().imgmsg_to_cv2(msg))
+ 
     # Get current target (only once)
     def target_callback(self, msg):
         if (self.target.size == 0):
@@ -125,6 +126,8 @@ class Controller(Node):
             \nTarget: (%f, %f, %f) \nError: (%f, %f, %f) \nDeltaU: (%f, %f)  \nCmd: (%f, %f) \nStage: (%f, %f)' % (self.tip[0],\
             self.tip[1], self.tip[2], self.target[0], self.target[1], self.target[2], error[0], error[1], error[2],\
             deltaU[0], deltaU[2], self.cmd[0], self.cmd[2], self.stage[0], self.stage[2]))    
+        self.get_logger().info('J = %s' %(self.J))
+        self.get_logger().info('Jc = %s' %(Jc))
 
         # Send command to stage
         self.robot_idle = False

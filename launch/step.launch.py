@@ -58,7 +58,7 @@ def generate_launch_description():
             {"save_J": False}
         ]    
     ) 
-
+    
     # Use simple controller (K*J*e)
     controller = Node(
         package = "trajcontrol",
