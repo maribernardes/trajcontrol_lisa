@@ -10,9 +10,8 @@ from sensor_msgs.msg import Image
 from cv_bridge import CvBridge
 from cv_bridge.core import CvBridge
 from numpy import loadtxt, asarray, savetxt
-from std_msgs.msg import Int8
 
-#This version only publishes the Jacobian when there is a new /sensor/base
+# This version uses a TIMER to calculate and publish the updated Jacobian
 class Estimator(Node):
 
     def __init__(self):
@@ -30,7 +29,9 @@ class Estimator(Node):
         self.subscription_base = self.create_subscription(PoseStamped, '/sensor/base', self.base_callback, 10)
         self.subscription_base # prevent unused variable warning
 
-        #Published topics (no timer - waits for SPACE key)
+        #Published topics
+        timer_period_jacobian = 0.3  # seconds
+        self.timer = self.create_timer(timer_period_jacobian, self.timer_jacobian_callback)
         self.publisher_jacobian = self.create_publisher(Image, '/needle/state/jacobian', 10)
         
         # Print numpy floats with only 3 decimal places
@@ -80,10 +81,9 @@ class Estimator(Node):
         if (self.Xant.size == 0):
             self.Xant = self.X
             self.TXant = self.TX
-        self.update_jacobian()
 
     # Update Jacobian from current base inputs and tip pose
-    def update_jacobian(self):
+    def timer_jacobian_callback(self):
             # Calculate deltaTX and deltaTZ between current and previous values         
             deltaTX = ((self.TX.sec*1e9 + self.TX.nanosec) - (self.TXant.sec*1e9 + self.TXant.nanosec))*1e-9    
             deltaTZ = ((self.TZ.sec*1e9 + self.TZ.nanosec) - (self.TZant.sec*1e9 + self.TZant.nanosec))*1e-9    
@@ -110,6 +110,7 @@ class Estimator(Node):
             msg = CvBridge().cv2_to_imgmsg(self.J)
             msg.header.stamp = self.get_clock().now().to_msg()
             self.publisher_jacobian.publish(msg)
+            # self.get_logger().info('Publish J = %s' %(self.J))
 
 
 ########################################################################

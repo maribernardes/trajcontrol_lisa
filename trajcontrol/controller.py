@@ -15,6 +15,7 @@ from trajcontrol.sensor_processing import INSERTION_STEP
 SAFE_LIMIT = 6.0    # Maximum control output delta from entry point [mm]
 DEPTH_MARGIN = 1.5   # Final insertion length margin [mm]
 
+#This version calculates the control output and sends to robot when a new Jacobian is published
 class Controller(Node):
 
     def __init__(self):
@@ -22,10 +23,6 @@ class Controller(Node):
 
         #Declare node parameters
         self.declare_parameter('K', 0.1) #Controller gain
-
-        #Topic from keypress node
-        self.subscription_keyboard = self.create_subscription(Int8, '/keyboard/key', self.keyboard_callback, 10)
-        self.subscription_keyboard # prevent unused variable warning
 
         #Topics from estimator node
         self.subscription_estimator = self.create_subscription(PoseStamped, '/needle/state/jacobian', self.robot_callback, 10)
@@ -52,6 +49,9 @@ class Controller(Node):
         #Published topics
         self.publisher_control = self.create_publisher(PointStamped, '/stage/control/cmd', 10)
 
+        # Print numpy floats with only 3 decimal places
+        np.set_printoptions(formatter={'float': lambda x: "{0:0.4f}".format(x)})
+
         # Stored values
         self.target = np.empty(shape=[0,3])         # Target 
         self.tip = np.empty(shape=[0,3])            # Current needle tip x and z (from aurora)
@@ -64,16 +64,13 @@ class Controller(Node):
         self.K = self.get_parameter('K').get_parameter_value().double_value      # Get K value          
         self.get_logger().info('K for this trial: %f' %(self.K))
 
-    # A keyboard hotkey was pressed 
-    def keyboard_callback(self, msg):
-        # Check if experiment is ready to begin (topics received)
-        # Only takes new inputs if robot finished previous action (robot IDLE)
-        if (msg.data == 32) and (self.robot_idle == True) and (self.target.size != 0) and (self.tip.size != 0) and (self.stage_initial.size != 0): # Hit SPACE and robot is free
-            self.send_cmd()         # Calls routine to calculate and send new control signal
-
     # Get current Jacobian matrix from Estimator node
     def jacobian_callback(self, msg):
         self.J = np.asarray(CvBridge().imgmsg_to_cv2(msg))
+        # Check if controller is ready to begin (topics received)
+        # Only takes new inputs if robot finished previous action (robot IDLE)
+        if (self.robot_idle == True) and (self.target.size != 0) and (self.tip.size != 0) and (self.stage_initial.size != 0): # Hit SPACE and robot is free
+            self.send_cmd()         # Calls routine to calculate and send new control signal
  
     # Get current target (only once)
     def target_callback(self, msg):
@@ -94,7 +91,6 @@ class Controller(Node):
         if (self.stage_initial.size == 0):
             self.stage_initial = np.array([robot.position.x, robot.position.y, robot.position.z])
             self.get_logger().info('Stage initial: (%f, %f, %f) ' % (self.stage_initial[0], self.stage_initial[1], self.stage_initial[2]))
-
 
     # Calculates control output and send MoveStage action to robot
     def send_cmd(self):
@@ -118,16 +114,14 @@ class Controller(Node):
         self.cmd[2] = min(self.cmd[2], 90.0)
         self.cmd[2] = max(self.cmd[2], 0.0)
 
-        # # TO MAKE INSERTIONS WITHOUT COMPENSATION (DELETE AFTER)
-        # self.cmd[0] = self.stage_initial[0]
-        # self.cmd[2] = self.stage_initial[2]
+        # TO MAKE INSERTIONS WITHOUT COMPENSATION (DELETE AFTER)
+        self.cmd[0] = self.stage_initial[0]
+        self.cmd[2] = self.stage_initial[2]
 
         self.get_logger().info('Applying trajectory compensation... DO NOT insert the needle now\nTip: (%f, %f, %f) \
             \nTarget: (%f, %f, %f) \nError: (%f, %f, %f) \nDeltaU: (%f, %f)  \nCmd: (%f, %f) \nStage: (%f, %f)' % (self.tip[0],\
             self.tip[1], self.tip[2], self.target[0], self.target[1], self.target[2], error[0], error[1], error[2],\
             deltaU[0], deltaU[2], self.cmd[0], self.cmd[2], self.stage[0], self.stage[2]))    
-        self.get_logger().info('J = %s' %(self.J))
-        self.get_logger().info('Jc = %s' %(Jc))
 
         # Send command to stage
         self.robot_idle = False

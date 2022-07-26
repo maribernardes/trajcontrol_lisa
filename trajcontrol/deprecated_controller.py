@@ -1,115 +1,155 @@
 import rclpy
 import numpy as np
+import math
 
 from rclpy.node import Node
 from rclpy.action import ActionClient
 from action_msgs.msg import GoalStatus
-
-from geometry_msgs.msg import PoseStamped, Point
+from cv_bridge import CvBridge
+from sensor_msgs.msg import Image
+from geometry_msgs.msg import PoseStamped, PointStamped, Point
 from std_msgs.msg import Int8
 from stage_control_interfaces.action import MoveStage
+from trajcontrol.sensor_processing import INSERTION_STEP
 
+SAFE_LIMIT = 6.0    # Maximum control output delta from entry point [mm]
+DEPTH_MARGIN = 1.5   # Final insertion length margin [mm]
 
-class ControllerNode(Node):
+#This version calculates the control output and sends to robot when a SPACE key is pressed
+class Controller(Node):
 
     def __init__(self):
-        super().__init__('controller_node')
+        super().__init__('controller')
 
         #Declare node parameters
-        self.declare_parameter('K', -0.5) #Controller gain
+        self.declare_parameter('K', 0.1) #Controller gain
 
         #Topic from keypress node
         self.subscription_keyboard = self.create_subscription(Int8, '/keyboard/key', self.keyboard_callback, 10)
         self.subscription_keyboard # prevent unused variable warning
-        self.listen_keyboard = False
 
-        #Topics from UI
-        self.subscription_entry_point = self.create_subscription(Point, '/subject/state/skin_entry', self.entry_callback, 10)
-        self.subscription_entry_point  # prevent unused variable warning
-        self.subscription_target = self.create_subscription(Point, '/subject/state/target', self.target_callback, 10)
-        self.subscription_target  # prevent unused variable warning
+        #Topics from estimator node
+        self.subscription_estimator = self.create_subscription(PoseStamped, '/needle/state/jacobian', self.robot_callback, 10)
+        self.subscription_estimator # prevent unused variable warning
 
         #Topics from sensor processing node
-        self.subscription_tip = self.create_subscription(PoseStamped, '/needle/state/pose_filtered', self.tip_callback, 10)
+        self.subscription_tip = self.create_subscription(PoseStamped, '/sensor/tip', self.tip_callback, 10)
         self.subscription_tip  # prevent unused variable warning
-
-        #Topics from robot node
-        self.subscription_robot = self.create_subscription(PoseStamped, '/stage/state/needle_pose', self.robot_callback, 10)
+        self.subscription_robot = self.create_subscription(PoseStamped, '/sensor/base', self.robot_callback, 10)
         self.subscription_robot # prevent unused variable warning
+
+        #Topics from UI (currently sensor processing node is doing the job)
+        self.subscription_target = self.create_subscription(PointStamped, '/subject/state/target', self.target_callback, 10)
+        self.subscription_target  # prevent unused variable warning
+
+        #Topics from estimator node
+        self.subscription_jacobian = self.create_subscription(Image, '/needle/state/jacobian', self.jacobian_callback, 10)
+        self.subscription_jacobian  # prevent unused variable warning
 
         #Action client 
         #Check the correct action name and msg type from John's code
         self.action_client = ActionClient(self, MoveStage, '/move_stage')
 
+        #Published topics
+        self.publisher_control = self.create_publisher(PointStamped, '/stage/control/cmd', 10)
+
+        # Print numpy floats with only 3 decimal places
+        np.set_printoptions(formatter={'float': lambda x: "{0:0.4f}".format(x)})
+
         # Stored values
-        self.entry_point = np.empty(shape=[2,0])    # Entry point x and z
-        self.target = np.empty(shape=[2,0])         # Target x and z
-        self.tip = np.empty(shape=[2,0])            # Current needle tip x and z (from aurora)
-        self.stage = np.empty(shape=[2,0])          # Current stage pose
-        self.cmd = np.zeros((2,1))                  # Control output to the robot stage
-        self.robot_ready = True                     # Stage move action status
+        self.target = np.empty(shape=[0,3])         # Target 
+        self.tip = np.empty(shape=[0,3])            # Current needle tip x and z (from aurora)
+        self.stage_initial = np.empty(shape=[0,3])     # Stage initial position
+        self.stage = np.empty(shape=[0,3])          # Current stage position
+        self.cmd = np.zeros((1,3))                  # Control output to the robot stage
+        self.depth = 0.0                            # Current insertion depth
+        self.robot_idle = True                      # Stage move action status
+        self.J = np.zeros((5,3))
+        self.K = self.get_parameter('K').get_parameter_value().double_value      # Get K value          
+        self.get_logger().info('K for this trial: %f' %(self.K))
 
     # A keyboard hotkey was pressed 
     def keyboard_callback(self, msg):
-        # Only takes new inputs if robot finished previous action
-        if (msg.data == 32) and (self.robot_ready == True): # Hit SPACE and robot is free
-            self.get_logger().info('DO NOT insert the needle now... robot correcting trajectory')
-            self.send_cmd()                                 # Calls routine to calculate and send new control signal
+        # Check if experiment is ready to begin (topics received)
+        # Only takes new inputs if robot finished previous action (robot IDLE)
+        if (msg.data == 32) and (self.robot_idle == True) and (self.target.size != 0) and (self.tip.size != 0) and (self.stage_initial.size != 0): # Hit SPACE and robot is free
+            self.send_cmd()         # Calls routine to calculate and send new control signal
 
-    # Get current entry point
-    def entry_callback(self, msg):
-        entry_point = msg
-        self.entry_point = np.array([entry_point.x, entry_point.z])
-
-    # Get current target
+    # Get current Jacobian matrix from Estimator node
+    def jacobian_callback(self, msg):
+        self.J = np.asarray(CvBridge().imgmsg_to_cv2(msg))
+ 
+    # Get current target (only once)
     def target_callback(self, msg):
-        target = msg
-        self.target = np.array([target.x, target.z])
+        if (self.target.size == 0):
+            target = msg.point
+            self.target = np.array([target.x, target.y, target.z])
 
     # Get current tip pose
     def tip_callback(self, msg):
         tip = msg.pose
-        self.tip = np.array([tip.position.x, tip.position.z])
+        self.tip = np.array([tip.position.x, tip.position.y, tip.position.z])
 
     # Get current base pose
     def robot_callback(self, msg_robot):
         robot = msg_robot.pose
-        self.stage = np.array([robot.position.x, robot.position.z])
+        self.stage = np.array([robot.position.x, robot.position.y, robot.position.z])
+        self.depth = robot.position.y
+        if (self.stage_initial.size == 0):
+            self.stage_initial = np.array([robot.position.x, robot.position.y, robot.position.z])
+            self.get_logger().info('Stage initial: (%f, %f, %f) ' % (self.stage_initial[0], self.stage_initial[1], self.stage_initial[2]))
 
-    # Send MoveStage action to Stage node (Goal)
+
+    # Calculates control output and send MoveStage action to robot
     def send_cmd(self):
-        self.get_logger().info('Sending goal')      
-        # Send new control signal only tip and target available and if robot has finished previous action
-        if (self.robot_ready == True) and (len(self.tip) != 0) and (len(self.target) != 0):
-            # Get pose from PoseStamped
-            K = self.get_parameter('K').get_parameter_value().double_value    # Get K value          
-            error = self.tip-self.target
-            self.cmd = self.stage + K*error  # Calculate control output
+        # Reduce Jacobian to use angles as free DOF's for control
+        Jc = self.J[0:3,:]
 
-            # Limit control output to maximum +-5mm around entry point
-            self.cmd[0] = min(self.cmd[0], self.entry_point[0]+10)
-            self.cmd[1] = min(self.cmd[1], self.entry_point[1]+10)
-            self.cmd[0] = max(self.cmd[0], self.entry_point[0]-10)
-            self.cmd[1] = max(self.cmd[1], self.entry_point[1]-10)
+        # Calculate base inputs delta
+        error = self.tip - self.target                          # Calculate control error
+        deltaU = self.K*np.matmul(np.linalg.pinv(Jc), error)    # Calculate control output
+        self.cmd = self.stage + deltaU
 
+        # Limit control output to maximum SAFE_LIMIT[mm] around entry stage_initial
+        self.cmd[0] = min(self.cmd[0], self.stage_initial[0]+SAFE_LIMIT)
+        self.cmd[0] = max(self.cmd[0], self.stage_initial[0]-SAFE_LIMIT)
+        self.cmd[2] = min(self.cmd[2], self.stage_initial[2]+SAFE_LIMIT)
+        self.cmd[2] = max(self.cmd[2], self.stage_initial[2]-SAFE_LIMIT)
 
-            # Send command to stage
-            self.robot_ready = False
-            goal_msg = MoveStage.Goal()
-            goal_msg.x = float(self.cmd[0]*0.001)
-            goal_msg.z = float(self.cmd[1]*0.001)
-            goal_msg.eps = 0.0001
+        # Test for stage limits
+        self.cmd[0] = min(self.cmd[0], 0.0)
+        self.cmd[0] = max(self.cmd[0], -90.0)
+        self.cmd[2] = min(self.cmd[2], 90.0)
+        self.cmd[2] = max(self.cmd[2], 0.0)
 
-            self.get_logger().info('Tip: x=%f, z=%f - Target: x=%f, z=%f' % (self.tip[0], self.tip[1], self.target[0], self.target[1]))    
+        # # TO MAKE INSERTIONS WITHOUT COMPENSATION (DELETE AFTER)
+        # self.cmd[0] = self.stage_initial[0]
+        # self.cmd[2] = self.stage_initial[2]
 
-            # self.get_logger().info('Waiting for action server...')
-            self.action_client.wait_for_server()
-            
-            self.get_logger().info('Sending goal request... Control u: x=%f, z=%f' % ((goal_msg.x)*1000, (goal_msg.z)*1000))      
-            self.send_goal_future = self.action_client.send_goal_async(goal_msg)
-            goal_msg.x = goal_msg.x*1000
-            goal_msg.z = goal_msg.z*1000
-            self.send_goal_future.add_done_callback(self.goal_response_callback)
+        self.get_logger().info('Applying trajectory compensation... DO NOT insert the needle now\nTip: (%f, %f, %f) \
+            \nTarget: (%f, %f, %f) \nError: (%f, %f, %f) \nDeltaU: (%f, %f)  \nCmd: (%f, %f) \nStage: (%f, %f)' % (self.tip[0],\
+            self.tip[1], self.tip[2], self.target[0], self.target[1], self.target[2], error[0], error[1], error[2],\
+            deltaU[0], deltaU[2], self.cmd[0], self.cmd[2], self.stage[0], self.stage[2]))    
+        self.get_logger().info('J = %s' %(self.J))
+        self.get_logger().info('Jc = %s' %(Jc))
+
+        # Send command to stage
+        self.robot_idle = False
+        goal_msg = MoveStage.Goal()
+        goal_msg.x = float(self.cmd[0]*0.001)
+        goal_msg.z = float(self.cmd[2]*0.001)
+        goal_msg.eps = 0.0001
+
+        self.action_client.wait_for_server() # Waiting for action server        
+        self.send_goal_future = self.action_client.send_goal_async(goal_msg)
+        self.send_goal_future.add_done_callback(self.goal_response_callback)
+
+        # Publish cmd
+        msg = PointStamped()
+        msg.header.stamp = self.get_clock().now().to_msg()
+        msg.header.frame_id = "stage"
+        msg.point = Point(x=self.cmd[0], y=self.cmd[1], z=self.cmd[2])
+        self.publisher_control.publish(msg)
 
     # Check if MoveStage action was accepted 
     def goal_response_callback(self, future):
@@ -125,25 +165,29 @@ class ControllerNode(Node):
         result = future.result().result
         status = future.result().status
         if status == GoalStatus.STATUS_SUCCEEDED:
-            self.get_logger().info('Goal succeeded! Result: {0}'.format(result.x))
-            self.robot_ready = True
-            self.get_logger().info('Please proceed with next insertion step and hit SPACE when done')
+            self.get_logger().info('Goal succeeded! Result: %f, %f' %(result.x*1000, result.z*1000))
+            self.get_logger().info('Tip: (%f, %f, %f)'   % (self.tip[0], self.tip[1], self.tip[2]))
+             # Check if max depth reached
+            if (abs(self.tip[1]-self.target[1]) <= DEPTH_MARGIN): 
+                self.robot_idle = False
+                self.get_logger().info('ATTENTION: Depth margin reached! Please stop insertion')                
+            else:
+                self.robot_idle = True
+                self.get_logger().info('Depth count: %.1fmm. Please insert %.1fmm more, then hit SPACE' % (self.stage[1], INSERTION_STEP))      
         else:
-            self.get_logger().info('Goal failed with status: {0}'.format(status))
+            self.get_logger().info('Goal failed with status: %s' %(result.status))
 
 
 def main(args=None):
     rclpy.init(args=args)
+    controller = Controller()
 
-    controller_node = ControllerNode()
-
-    controller_node.get_logger().info('**********BEGIN EXPERIMENT********** \nStart first insertion step and hit SPACE when done')
-    rclpy.spin(controller_node)
+    rclpy.spin(controller)
 
     # Destroy the node explicitly
     # (optional - otherwise it will be done automatically
     # when the garbage collector destroys the node object)
-    controller_node.destroy_node()
+    controller.destroy_node()
     rclpy.shutdown()
 
 if __name__ == '__main__':
