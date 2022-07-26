@@ -1,5 +1,5 @@
 %With X = [x_base; y_base; z_base] and Z = [x_tip; y_tip; z_tip; horizangle_tip vertiangle_tip]\n');
-clear; close all; clc;
+% clear; close all; clc;
 
 %% Configure simulation
 alpha = 0.65; 
@@ -41,7 +41,6 @@ Z_hat(:,1) = Z(:,1);
 Z_hat(:,2) = Z(:,2);
 
 % Select initial Jacobian
-% Jsim = (Z(:,init+1)-Z(:,init))*pinv(X(:,init+1)-X(:,init));
 Jsim = J{1};
 
 %% Loop key
@@ -59,7 +58,7 @@ for i=2:N
     if key(i) == 1 % key hit: Update Jacobian and calculate new Z_hat
         
         % Use Jacobian from experiment
-        deltaZ_hat = J{i}*(X(:,i)-Xant); % Predict estimate from Jacobian and inputs
+        deltaZ_hat = J{i+1}*(X(:,i)-Xant); % Predict estimate from Jacobian and inputs
 
         % Use Jacobian calculated in matlab simulation
         deltaZsensor = (Z(:,i)-Zant);
@@ -72,28 +71,22 @@ for i=2:N
         Xant = X(:,i);
         Tant = t(i);
         
-%         Z_hat(:,i) = Z(:,i);
-%         Z_hat_sim(:,i) = Z(:,i);
         Z_hat(:,i) = deltaZ_hat + Z_hat(:,i-1); 
         Z_hat_sim(:,i) = deltaZ_hat_sim + Z_hat_sim(:,i-1); 
 
-    else
-        deltaZ_hat = J{i}*(X(:,i)-X(:,i-1)); % Predict estimate from Jacobian and inputs
-        Z_hat(:,i) = deltaZ_hat + Z_hat(:,i-1);  
-
-        deltaZ_hat_sim = Jsim*(X(:,i)-X(:,i-1)); % Predict estimate from Jacobian and inputs
-        Z_hat_sim(:,i) = deltaZ_hat_sim + Z_hat_sim(:,i-1);       
-
+    else % DeltaX is zero (no base update)
+        Z_hat(:,i) = Z_hat(:,i-1);  
+        Z_hat_sim(:,i) = Z_hat_sim(:,i-1);       
     end 
 end
 
 
 %% Plot results
 figure  
-plot(abs(Z_hat(1,:)-Z_hat_sim(1,:)),'.-'), title('Difference between simulated and experiment')
+plot(t, abs(Z_hat(1,:)-Z_hat_sim(1,:)),'.-'), title('Difference between simulated and experiment')
 hold on
-plot(abs(Z_hat(2,:)-Z_hat_sim(2,:)),'.-')
-plot(abs(Z_hat(3,:)-Z_hat_sim(3,:)), '.-')
+plot(t, abs(Z_hat(2,:)-Z_hat_sim(2,:)),'.-')
+plot(t, abs(Z_hat(3,:)-Z_hat_sim(3,:)), '.-')
 plot_key('--g');
 legend('X','Y','Z')
 xlabel('sample #'),ylabel('Error [mm]')
@@ -118,22 +111,22 @@ title('Tip position - Z direction'),xlabel('time [s]'),ylabel('Z [mm]'), legend(
 
 
 figure  
-plot(abs(Z(1,:)-Z_hat(1,:)),'.-'), title('Experiment estimation error in position')
+plot(t, abs(Z(1,:)-Z_hat(1,:)),'.-'), title('Experiment estimation error in position')
 hold on
-plot(abs(Z(2,:)-Z_hat(2,:)),'.-')
-plot(abs(Z(3,:)-Z_hat(3,:)), '.-')
+plot(t, abs(Z(2,:)-Z_hat(2,:)),'.-')
+plot(t, abs(Z(3,:)-Z_hat(3,:)), '.-')
 plot_key('--g');
 legend('X','Y','Z')
-xlabel('sample #'),ylabel('Error [mm]')
+xlabel('time [s]'),ylabel('Error [mm]')
 
 figure  
-plot(abs(Z(1,:)-Z_hat_sim(1,:)),'.-'), title('Simulation estimation error in position')
+plot(t, abs(Z(1,:)-Z_hat_sim(1,:)),'.-'), title('Simulation estimation error in position')
 hold on
-plot(abs(Z(2,:)-Z_hat_sim(2,:)),'.-')
-plot(abs(Z(3,:)-Z_hat_sim(3,:)), '.-')
+plot(t, abs(Z(2,:)-Z_hat_sim(2,:)),'.-')
+plot(t, abs(Z(3,:)-Z_hat_sim(3,:)), '.-')
 plot_key('--g');
 legend('X','Y','Z')
-xlabel('sample #'),ylabel('Error [mm]')
+xlabel('time [s]'),ylabel('Error [mm]')
 
 
 function plot_key(line)

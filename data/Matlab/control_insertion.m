@@ -8,15 +8,15 @@ global T;
 global K;
 
 %% Load Dataset
-trial = 04;
+trial = 02;
 folder = '2022-07-20';
-name = 'trialb_';
+name = 'checkcmd_';
 load(strcat(folder,'/',name,num2str(trial,'%2.2d'),'.mat'));
 
 %% Configure simulation
 N = size(X,2);  % data size
 alpha = 0.65; 
-K = 0.01;
+K = 0.05;
 safe_limit = 6;
 base_init = base(:,1);
 
@@ -78,11 +78,11 @@ figure(2);
 plot(t, cmd1(1,:), '.-', t, cmd2(1,:), '.-')
 hold on
 plot(t, cmd1(3,:), '.-', t, cmd2(3,:), '.-')
-plot_baseline('--k');
 plot(t, Z(1,:),'.-', t, Z(3,:), '.-')
+plot_baseline('--k');
 plot_safe_limit('k');
 plot_key('--g');
-title('Control output'),xlabel('time [s]'),ylabel('cmd [mm]'),  legend('X exp', 'X sim','Z exp','Z sim', 'initial', 'tipX', 'tipZ')
+title('Control output'),xlabel('time [s]'),ylabel('cmd [mm]'),  legend('X exp', 'X sim','Z exp','Z sim',  'tipX', 'tipZ', 'initial')
 
 
 % Control sensitivity
@@ -94,11 +94,11 @@ plot(t, cmd3(3,:), '.-')
 plot(t, cmd4(3,:), '.-')
 plot(t, cmd5(3,:), '.-')
 plot(t, cmd6(3,:), '.-')
-plot_baseline('--k');
 plot(t, Z(3,:),'.-')
+plot_baseline('--k');
 plot_safe_limit('k');
 plot_key('--g');
-title('Control sensitivity'),xlabel('time [s]'),ylabel('cmd [mm]'),  legend('Z exp', 'Z sim1','Z sim2', 'Z sim3','Z sim4','Z sim5', 'initial', 'tipX')
+title('Control sensitivity'),xlabel('time [s]'),ylabel('cmd [mm]'),  legend('Z exp', 'Z sim1','Z sim2', 'Z sim3','Z sim4','Z sim5', 'tipX', 'initial')
 
 % Tip and target
 figure(3);
