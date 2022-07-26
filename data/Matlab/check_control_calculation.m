@@ -8,9 +8,9 @@ global T;
 global K;
 
 %% Load Dataset
-trial = 02;
-folder = '2022-07-20';
-name = 'checkcmd_';
+trial = 01;
+folder = '2022-07-26';
+name = 'trialc_';
 load(strcat(folder,'/',name,num2str(trial,'%2.2d'),'.mat'));
 
 %% Configure simulation
@@ -33,46 +33,21 @@ end
 err = zeros(3,N);
 cmd1 = zeros(3,N);
 cmd2 = zeros(3,N);
-cmd3 = zeros(3,N);
-cmd4 = zeros(3,N);
-cmd5 = zeros(3,N);
-cmd6 = zeros(3,N);
-cmd1(:,1) = cmd(:,1);
-cmd2(:,1) = cmd(:,1);
-cmd3(:,1) = cmd(:,1);
-cmd4(:,1) = cmd(:,1);
-cmd5(:,1) = cmd(:,1);
-cmd6(:,1) = cmd(:,1);
+
 for i=1:N
     cmd1(:,i) = cmd(:,i);
     err(:,i) = tip(1:3,i) - target; 
-    if key(i) == 1 % key hit: Update Jacobian and calculate new Z_hat
+    if key(i) ~= 0 % key hit: Update Jacobian and calculate new Z_hat
         %Calculate cmd
-        Jc = J{i-2}(1:3,:);
+        Jc = J{i}(1:3,:);
         cmd2(:,i) = calculate_err(Jc, tip(1:3,i) - target, base(:,i));
-        cmd3(:,i) = calculate_err(Jc, tip(1:3,i-1) - target, base(:,i));
-        cmd4(:,i) = calculate_err(Jc, tip(1:3,i-2) - target, base(:,i));
-        cmd5(:,i) = calculate_err(Jc, tip(1:3,i+1) - target, base(:,i));
-        cmd6(:,i) = calculate_err(Jc, tip(1:3,i+2) - target, base(:,i));
     else
-        if (i>1)
-            cmd2(:,i) = cmd2(:,i-1);
-            cmd3(:,i) = cmd3(:,i-1);
-            cmd4(:,i) = cmd4(:,i-1);
-            cmd5(:,i) = cmd5(:,i-1);
-            cmd6(:,i) = cmd6(:,i-1);
-        end
+        cmd2(:,i) = cmd2(:,i-1);
     end
 end
 
 
-%% Plot control error to target
-figure(1);
-plot(t, err(1,:),'.-', t, err(2,:),'.-', t, err(3,:),'.-')
-hold on;
-plot_key('--g');
-title('Error to target'),xlabel('time [s]'),ylabel('err [mm]'),  legend('X', 'Y', 'Z')
-
+%% Plots
 % Control output
 figure(2);
 plot(t, cmd1(1,:), '.-', t, cmd2(1,:), '.-')
@@ -82,31 +57,7 @@ plot(t, Z(1,:),'.-', t, Z(3,:), '.-')
 plot_baseline('--k');
 plot_safe_limit('k');
 plot_key('--g');
-title('Control output'),xlabel('time [s]'),ylabel('cmd [mm]'),  legend('X exp', 'X sim','Z exp','Z sim',  'tipX', 'tipZ', 'initial')
-
-
-% Control sensitivity
-figure(7);
-plot(t, cmd1(3,:), '.-')
-hold on
-plot(t, cmd2(3,:), '.-')
-plot(t, cmd3(3,:), '.-')
-plot(t, cmd4(3,:), '.-')
-plot(t, cmd5(3,:), '.-')
-plot(t, cmd6(3,:), '.-')
-plot(t, Z(3,:),'.-')
-plot_baseline('--k');
-plot_safe_limit('k');
-plot_key('--g');
-title('Control sensitivity'),xlabel('time [s]'),ylabel('cmd [mm]'),  legend('Z exp', 'Z sim1','Z sim2', 'Z sim3','Z sim4','Z sim5', 'tipX', 'initial')
-
-% Tip and target
-figure(3);
-plot(t, Z(1,:),'.-', t, Z(3,:), '.-')
-hold on
-plot_target('--r')
-plot_key('--g');
-title('Tip vs Target'),xlabel('time [s]'),ylabel('X [mm]'),   legend('X','Z')
+title('Control output'),xlabel('time [s]'),ylabel('cmd [mm]'),  legend('X exp', 'X sim','Z exp','Z sim', 'robot init')
 
 function cmd = calculate_err(Jc, err, base)
     global safe_limit;

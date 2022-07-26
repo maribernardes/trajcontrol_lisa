@@ -6,8 +6,8 @@ alpha = 0.65;
 
 
 %% Load Dataset
-trial = 03;
-folder = '2022-07-20';
+trial = 00;
+folder = '2022-07-26';
 name = 'trialb_';
 load(strcat(folder,'/',name,num2str(trial,'%2.2d'),'.mat'));
 
