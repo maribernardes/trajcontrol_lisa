@@ -62,7 +62,7 @@ def generate_launch_description():
     # Use simple controller (K*J*e)
     controller = Node(
         package = "trajcontrol",
-        executable = "controller",
+        executable = "controller_proportional",
         parameters =[{"K": LaunchConfiguration('K')}]
     )   
 

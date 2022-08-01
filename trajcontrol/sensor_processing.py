@@ -18,7 +18,7 @@ class SensorProcessing(Node):
         super().__init__('sensor_processing')
 
         #Declare node parameters
-        self.declare_parameter('insertion_length', -100.0) #Jacobian update parameter
+        self.declare_parameter('insertion_length', -100.0) #Insertion length parameter
 
         #Topics from Aurora sensor node (OpenIGTLink Bridge)
         self.subscription_sensor = self.create_subscription(Transform, 'IGTL_TRANSFORM_IN', self.aurora_callback, 10)

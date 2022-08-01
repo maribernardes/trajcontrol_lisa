@@ -53,10 +53,10 @@ class Controller(Node):
         np.set_printoptions(formatter={'float': lambda x: "{0:0.4f}".format(x)})
 
         # Stored values
-        self.target = np.empty(shape=[0,3])         # Target 
         self.tip = np.empty(shape=[0,3])            # Current needle tip x and z (from aurora)
-        self.stage_initial = np.empty(shape=[0,3])     # Stage initial position
+        self.stage_initial = np.empty(shape=[0,3])  # Stage initial position
         self.stage = np.empty(shape=[0,3])          # Current stage position
+        self.target = np.empty(shape=[0,3])         # Target 
         self.cmd = np.zeros((1,3))                  # Control output to the robot stage
         self.depth = 0.0                            # Current insertion depth
         self.robot_idle = True                      # Stage move action status
@@ -115,8 +115,8 @@ class Controller(Node):
         self.cmd[2] = max(self.cmd[2], 0.0)
 
         # TO MAKE INSERTIONS WITHOUT COMPENSATION (DELETE AFTER)
-        self.cmd[0] = self.stage_initial[0]
-        self.cmd[2] = self.stage_initial[2]
+        # self.cmd[0] = self.stage_initial[0]
+        # self.cmd[2] = self.stage_initial[2]
 
         self.get_logger().info('Applying trajectory compensation... DO NOT insert the needle now\nTip: (%f, %f, %f) \
             \nTarget: (%f, %f, %f) \nError: (%f, %f, %f) \nDeltaU: (%f, %f)  \nCmd: (%f, %f) \nStage: (%f, %f)' % (self.tip[0],\
