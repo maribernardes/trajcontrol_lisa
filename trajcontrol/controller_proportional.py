@@ -57,7 +57,7 @@ class Controller(Node):
         self.stage_initial = np.empty(shape=[0,3])  # Stage initial position
         self.stage = np.empty(shape=[0,3])          # Current stage position
         self.target = np.empty(shape=[0,3])         # Target 
-        self.cmd = np.zeros((1,3))                  # Control output to the robot stage
+        self.cmd = np.zeros(3)                      # Control output to the robot stage
         self.depth = 0.0                            # Current insertion depth
         self.robot_idle = True                      # Stage move action status
         self.J = np.zeros((5,3))

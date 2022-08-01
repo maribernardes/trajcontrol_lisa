@@ -58,7 +58,7 @@ class ControllerMPC(Node):
         self.stage_initial = np.empty(shape=[0,3])  # Stage initial position
         self.stage = np.empty(shape=[0,3])          # Current stage position
         self.target = np.empty(shape=[0,3])         # Target 
-        self.cmd = np.zeros((1,3))                  # Control output to the robot stage
+        self.cmd = np.empty(shape=[0,3])            # Control output to the robot stage
         self.depth = 0.0                            # Current insertion depth
         self.robot_idle = True                      # Stage move action status
         self.Jc = np.zeros((3,3))
@@ -77,6 +77,7 @@ class ControllerMPC(Node):
         self.depth = robot.position.y
         if (self.stage_initial.size == 0):
             self.stage_initial = np.array([robot.position.x, robot.position.y, robot.position.z])
+            self.cmd = self.stage_initial
             self.get_logger().info('Stage initial: (%f, %f, %f) ' % (self.stage_initial[0], self.stage_initial[1], self.stage_initial[2]))
             # Control output limits
             limit_x = (float(self.stage_initial[0])-SAFE_LIMIT, float(self.stage_initial[0])+SAFE_LIMIT)
@@ -98,7 +99,6 @@ class ControllerMPC(Node):
     def jacobian_callback(self, msg):
         J = np.asarray(CvBridge().imgmsg_to_cv2(msg))
         self.Jc = J[0:3,:]
-       
         # Send control signal only if robot is ready and after first readings (target and current needle tip)
         if (self.robot_idle == True) and (self.target.size != 0) and (self.tip.size != 0):
             self.send_cmd()
@@ -139,8 +139,8 @@ class ControllerMPC(Node):
 
             # Minimization objectives
             wu = 0.2
-            tg_xz = np.array([self.target[0],self.target[2]])   # Build tg without depth
-            y_hat_xz = np.array([y_hat[:,0],y_hat[:,2]])        # Build y_hat and tg without depth
+            tg_xz = np.array([self.target[0],self.target[2]])   # Build target without depth
+            y_hat_xz = np.array([y_hat[-1,0],y_hat[-1,2]])      # Build last tip prediction without depth
 
             obj1 = np.linalg.norm(tg_xz-y_hat_xz)               # Tip error to target
             obj2 = np.sum(np.amax(np.absolute(u_hat), axis=0))  # Total base displacement around entry point
@@ -154,11 +154,12 @@ class ControllerMPC(Node):
 
         # MPC Initialization
         H = self.ns - math.floor(self.depth/INSERTION_STEP)    # Horizon size
-        if(self.cmd.size == 0):
-            u0 = np.array([self.stage_initial[0], self.stage_initial[2]])
-        else:
-            u0 = np.array([self.cmd[0], self.cmd[2]])
+        u0 = np.array([self.cmd[0], self.cmd[2]])
         u_hat = np.tile(u0, (H,1))   # Initial control guess using last cmd value (vector with remaining horizon size)
+
+        self.get_logger().info('H: %i' % (H))
+
+        self.get_logger().info('u_hat: %s' % (u_hat))
 
         # Initial objective
         self.get_logger().info('Initial SSE Objective: %f' % (objective(u_hat)))  # calculate cost function with initial guess
@@ -171,12 +172,13 @@ class ControllerMPC(Node):
         
         cost = objective(u)
         self.get_logger().info('Final SSE Objective: %f' % (cost)) # calculate cost function with optimization result
+        self.get_logger().info('Solution: %s' % (u[0,:])) # calculate cost function with optimization result
         self.get_logger().info('Elapsed time: %f' % (end_time-start_time))
             
         # Update controller output
-        self.cmd[0] = u[0]
+        self.cmd[0] = u[0,0]
         self.cmd[1] = self.cmd[1]+INSERTION_STEP
-        self.cmd[2] = u[1]
+        self.cmd[2] = u[0,1]
 
         ## Keeping this just to be on the safe side (but should not be necessary)
         # Limit control output to maximum SAFE_LIMIT[mm] around entry stage_initial
@@ -191,11 +193,15 @@ class ControllerMPC(Node):
         self.cmd[2] = min(self.cmd[2], 90.0)
         self.cmd[2] = max(self.cmd[2], 0.0)
 
+        # TO MAKE TESTS WITHOUT MOVING ROBOT (DELETE AFTER)
+        self.cmd[0] = self.stage_initial[0]
+        self.cmd[2] = self.stage_initial[2]
+
         # Print values
         self.get_logger().info('Applying trajectory compensation... DO NOT insert the needle now\nTip: (%f, %f, %f) \
             \nTarget: (%f, %f, %f) \nError: (%f, %f, %f) \nDeltaU: (%f, %f)  \nCmd: (%f, %f) \nStage: (%f, %f)' % (self.tip[0],\
             self.tip[1], self.tip[2], self.target[0], self.target[1], self.target[2], error[0], error[1], error[2],\
-            u[0] - self.stage[0], u[1] - self.stage[2], self.cmd[0], self.cmd[2], self.stage[0], self.stage[2]))    
+            u[0,0] - self.stage[0], u[0,1] - self.stage[2], self.cmd[0], self.cmd[2], self.stage[0], self.stage[2]))    
 
         # Send command to stage
         self.robot_idle = False
