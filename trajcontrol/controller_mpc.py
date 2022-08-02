@@ -139,8 +139,13 @@ class ControllerMPC(Node):
 
             # Minimization objectives
             wu = 0.2
-            tg_xz = np.array([self.target[0],self.target[2]])   # Build target without depth
-            y_hat_xz = np.array([y_hat[-1,0],y_hat[-1,2]])      # Build last tip prediction without depth
+            ##This considers all remaining insertion steps (minimizes error to trajectory, not only target)
+            tg_xz = np.array([self.target[0:H,0],self.target[0:H,2]])   # Build target without depth
+            y_hat_xz = np.array([y_hat[:,0],y_hat[:,2]])                # Build tip prediction without depth
+
+            ##This considers only final tip and target
+            # tg_xz = np.array([self.target[0],self.target[2]])   # Build target without depth
+            # y_hat_xz = np.array([y_hat[-1,0],y_hat[-1,2]])      # Build last tip prediction without depth
 
             obj1 = np.linalg.norm(tg_xz-y_hat_xz)               # Tip error to target
             obj2 = np.sum(np.amax(np.absolute(u_hat), axis=0))  # Total base displacement around entry point
