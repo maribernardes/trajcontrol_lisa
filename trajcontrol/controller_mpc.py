@@ -147,8 +147,12 @@ class ControllerMPC(Node):
             # tg_xz = np.array([self.target[0],self.target[2]])   # Build target without depth
             # y_hat_xz = np.array([y_hat[-1,0],y_hat[-1,2]])      # Build last tip prediction without depth
 
+            u0 = np.array([self.stage_initial[0], self.stage_initial[2]])
+            u_init = np.tile(u0,(H,1)) 
+            delta_u_hat = u_hat - u_init
+
             obj1 = np.linalg.norm(tg_xz-y_hat_xz)               # Tip error to target
-            obj2 = np.sum(np.amax(np.absolute(u_hat), axis=0))  # Total base displacement around entry point
+            obj2 = np.sum(np.amax(np.absolute(delta_u_hat), axis=0))  # Total base displacement around entry point
             obj = obj1 + wu*obj2
             return obj 
 
