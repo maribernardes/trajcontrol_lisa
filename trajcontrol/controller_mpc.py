@@ -138,10 +138,10 @@ class ControllerMPC(Node):
                 u_hat0 = u_hat[k]
 
             # Minimization objectives
-            wu = 0.2
+            wu = 0.0
             ##This considers all remaining insertion steps (minimizes error to trajectory, not only target)
-            tg_xz = np.array([self.target[0:H,0],self.target[0:H,2]])   # Build target without depth
-            y_hat_xz = np.array([y_hat[:,0],y_hat[:,2]])                # Build tip prediction without depth
+            tg_xz = np.tile([self.target[0],self.target[2]],(H,1))      # Build target without depth
+            y_hat_xz = np.array([y_hat[:,0],y_hat[:,2]]).T              # Build tip prediction without depth
 
             ##This considers only final tip and target
             # tg_xz = np.array([self.target[0],self.target[2]])   # Build target without depth
@@ -163,48 +163,50 @@ class ControllerMPC(Node):
 
         # MPC Initialization
         H = self.ns - math.floor(self.depth/INSERTION_STEP)    # Horizon size
-        u0 = np.array([self.cmd[0], self.cmd[2]])
-        u_hat = np.tile(u0, (H,1))   # Initial control guess using last cmd value (vector with remaining horizon size)
+        if (H > 0):         # Continue insertion steps
+            u0 = np.array([self.cmd[0], self.cmd[2]])
+            u_hat = np.tile(u0, (H,1))   # Initial control guess using last cmd value (vector with remaining horizon size)
 
-        self.get_logger().info('H: %i' % (H))
+            self.get_logger().info('H: %i' % (H))
 
-        self.get_logger().info('u_hat: %s' % (u_hat))
+            self.get_logger().info('u_hat: %s' % (u_hat))
 
-        # Initial objective
-        self.get_logger().info('Initial SSE Objective: %f' % (objective(u_hat)))  # calculate cost function with initial guess
+            # Initial objective
+            self.get_logger().info('Initial SSE Objective: %f' % (objective(u_hat)))  # calculate cost function with initial guess
 
-        # MPC calculation
-        start_time = time.time()
-        solution = minimize(objective, u_hat, method='SLSQP', bounds=self.limit*H)    # optimizes the objective function
-        u = np.reshape(solution.x,(H,2), order='C')                                 # reshape solution (minimize flattens it)
-        end_time = time.time()
-        
-        cost = objective(u)
-        self.get_logger().info('Final SSE Objective: %f' % (cost)) # calculate cost function with optimization result
-        self.get_logger().info('Solution: %s' % (u[0,:])) # calculate cost function with optimization result
-        self.get_logger().info('Elapsed time: %f' % (end_time-start_time))
+            # MPC calculation
+            start_time = time.time()
+            solution = minimize(objective, u_hat, method='SLSQP', bounds=self.limit*H)    # optimizes the objective function
+            u = np.reshape(solution.x,(H,2), order='C')                                 # reshape solution (minimize flattens it)
+            end_time = time.time()
             
-        # Update controller output
-        self.cmd[0] = u[0,0]
-        self.cmd[1] = self.cmd[1]+INSERTION_STEP
-        self.cmd[2] = u[0,1]
+            cost = objective(u)
+            self.get_logger().info('Final SSE Objective: %f' % (cost)) # calculate cost function with optimization result
+            self.get_logger().info('Solution: %s' % (u[0,:])) # calculate cost function with optimization result
+            self.get_logger().info('Elapsed time: %f' % (end_time-start_time))
+                
+            # Update controller output
+            self.cmd[0] = u[0,0]
+            self.cmd[1] = self.cmd[1]+INSERTION_STEP
+            self.cmd[2] = u[0,1]
 
-        ## Keeping this just to be on the safe side (but should not be necessary)
-        # Limit control output to maximum SAFE_LIMIT[mm] around entry stage_initial
-        self.cmd[0] = min(self.cmd[0], self.stage_initial[0]+SAFE_LIMIT)
-        self.cmd[0] = max(self.cmd[0], self.stage_initial[0]-SAFE_LIMIT)
-        self.cmd[2] = min(self.cmd[2], self.stage_initial[2]+SAFE_LIMIT)
-        self.cmd[2] = max(self.cmd[2], self.stage_initial[2]-SAFE_LIMIT)
+            ## Keeping this just to be on the safe side (but should not be necessary)
+            # Limit control output to maximum SAFE_LIMIT[mm] around entry stage_initial
+            self.cmd[0] = min(self.cmd[0], self.stage_initial[0]+SAFE_LIMIT)
+            self.cmd[0] = max(self.cmd[0], self.stage_initial[0]-SAFE_LIMIT)
+            self.cmd[2] = min(self.cmd[2], self.stage_initial[2]+SAFE_LIMIT)
+            self.cmd[2] = max(self.cmd[2], self.stage_initial[2]-SAFE_LIMIT)
 
-        # Test for stage limits
-        self.cmd[0] = min(self.cmd[0], 0.0)
-        self.cmd[0] = max(self.cmd[0], -90.0)
-        self.cmd[2] = min(self.cmd[2], 90.0)
-        self.cmd[2] = max(self.cmd[2], 0.0)
+            # Test for stage limits
+            self.cmd[0] = min(self.cmd[0], 0.0)
+            self.cmd[0] = max(self.cmd[0], -90.0)
+            self.cmd[2] = min(self.cmd[2], 90.0)
+            self.cmd[2] = max(self.cmd[2], 0.0)
 
-        # TO MAKE TESTS WITHOUT MOVING ROBOT (DELETE AFTER)
-        self.cmd[0] = self.stage_initial[0]
-        self.cmd[2] = self.stage_initial[2]
+        else:   # Finished all insertion steps
+            self.cmd[0] = self.stage[0]
+            self.cmd[2] = self.stage[2]
+            u = np.array([[self.stage[0], self.stage[1]]])
 
         # Print values
         self.get_logger().info('Applying trajectory compensation... DO NOT insert the needle now\nTip: (%f, %f, %f) \
@@ -229,6 +231,7 @@ class ControllerMPC(Node):
         msg.header.frame_id = "stage"
         msg.point = Point(x=self.cmd[0], y=self.cmd[1], z=self.cmd[2])
         self.publisher_control.publish(msg)
+
 
     # Check if MoveStage action was accepted 
     def goal_response_callback(self, future):
