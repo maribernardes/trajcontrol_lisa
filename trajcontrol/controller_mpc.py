@@ -83,12 +83,14 @@ class ControllerMPC(Node):
             limit_x = (float(self.stage_initial[0])-SAFE_LIMIT, float(self.stage_initial[0])+SAFE_LIMIT)
             limit_z = (float(self.stage_initial[2])-SAFE_LIMIT, float(self.stage_initial[2])+SAFE_LIMIT)
             self.limit = [limit_x, limit_z]
+            self.get_logger().info('Stage limit: %s'%(self.limit))
 
     # Get current target (only once)
     def target_callback(self, msg):
         if (self.target.size == 0):
             target = msg.point
             self.target = np.array([target.x, target.y, target.z])
+            self.get_logger().info('Target: (%f, %f, %f) ' % (self.target[0], self.target[1], self.target[2]))
 
     # Get current tip pose
     def tip_callback(self, msg):
@@ -99,7 +101,6 @@ class ControllerMPC(Node):
     def jacobian_callback(self, msg):
         J = np.asarray(CvBridge().imgmsg_to_cv2(msg))
         self.Jc = J[0:3,:]
-        # Send control signal only if robot is ready and after first readings (target and current needle tip)
         if (self.robot_idle == True) and (self.target.size != 0) and (self.tip.size != 0):
             self.send_cmd()
 
@@ -126,7 +127,7 @@ class ControllerMPC(Node):
 
             # Initialize prediction
             y_hat0 = self.tip
-            u_hat0 = self.stage
+            u_hat0 = np.array([self.stage[0],self.stage[2]])
 
             # Simulate prediction horizon
             for k in range(0,H):
@@ -167,24 +168,20 @@ class ControllerMPC(Node):
             u0 = np.array([self.cmd[0], self.cmd[2]])
             u_hat = np.tile(u0, (H,1))   # Initial control guess using last cmd value (vector with remaining horizon size)
 
-            self.get_logger().info('H: %i' % (H))
-
-            self.get_logger().info('u_hat: %s' % (u_hat))
-
             # Initial objective
-            self.get_logger().info('Initial SSE Objective: %f' % (objective(u_hat)))  # calculate cost function with initial guess
+            # self.get_logger().info('Initial SSE Objective: %f' % (objective(u_hat)))  # calculate cost function with initial guess
 
             # MPC calculation
-            start_time = time.time()
+            # start_time = time.time()
             solution = minimize(objective, u_hat, method='SLSQP', bounds=self.limit*H)    # optimizes the objective function
             u = np.reshape(solution.x,(H,2), order='C')                                 # reshape solution (minimize flattens it)
-            end_time = time.time()
+            # end_time = time.time()
             
-            cost = objective(u)
-            self.get_logger().info('Final SSE Objective: %f' % (cost)) # calculate cost function with optimization result
-            self.get_logger().info('Solution: %s' % (u[0,:])) # calculate cost function with optimization result
-            self.get_logger().info('Elapsed time: %f' % (end_time-start_time))
-                
+            # cost = objective(u)
+            # self.get_logger().info('Final SSE Objective: %f' % (cost)) # calculate cost function with optimization result
+            self.get_logger().info('Solution: %s' % (u)) # calculate cost function with optimization result
+            # self.get_logger().info('Elapsed time: %f' % (end_time-start_time))
+            
             # Update controller output
             self.cmd[0] = u[0,0]
             self.cmd[1] = self.cmd[1]+INSERTION_STEP
