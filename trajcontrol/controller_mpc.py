@@ -16,7 +16,7 @@ from scipy.optimize import minimize
 from trajcontrol.sensor_processing import INSERTION_STEP
 
 SAFE_LIMIT = 6.0    # Maximum control output delta from entry point [mm]
-DEPTH_MARGIN = 1.5   # Final insertion length margin [mm]
+DEPTH_MARGIN = 1.5  # Final insertion length margin [mm]
 
 class ControllerMPC(Node):
 
@@ -24,8 +24,6 @@ class ControllerMPC(Node):
         super().__init__('controller_mpc')
 
         #Declare node parameters
-        # self.declare_parameter('P', 10) #Prediction Horizon
-        # self.declare_parameter('C', 3)  #Control Horizon
         self.declare_parameter('insertion_length', -100.0) #Insertion length parameter
 
         #Topics from sensor processing node
@@ -63,12 +61,9 @@ class ControllerMPC(Node):
         self.robot_idle = True                      # Stage move action status
         self.Jc = np.zeros((3,3))
 
-        # self.P = self.get_parameter('P').get_parameter_value().double_value      # Get P value          
-        # self.C = self.get_parameter('C').get_parameter_value().double_value      # Get C value          
-        # self.get_logger().info('MPC paramenters for this trial: P = %f, C = %f' %(self.P, self.C))
         self.insertion_length = self.get_parameter('insertion_length').get_parameter_value().double_value
         self.ns = math.floor(self.insertion_length/INSERTION_STEP)
-        self.get_logger().info('MPC horizon for this trial: H = %f' %(self.ns))
+        self.get_logger().info('MPC max horizon for this trial: H = %f' %(self.ns))
 
     # Get current base pose
     def robot_callback(self, msg_robot):
@@ -76,9 +71,11 @@ class ControllerMPC(Node):
         self.stage = np.array([robot.position.x, robot.position.y, robot.position.z])
         self.depth = robot.position.y
         if (self.stage_initial.size == 0):
+            # Set stage initial position
             self.stage_initial = np.array([robot.position.x, robot.position.y, robot.position.z])
-            self.cmd = self.stage_initial
+            self.cmd = np.array(self.stage_initial)
             self.get_logger().info('Stage initial: (%f, %f, %f) ' % (self.stage_initial[0], self.stage_initial[1], self.stage_initial[2]))
+
             # Control output limits
             limit_x = (float(self.stage_initial[0])-SAFE_LIMIT, float(self.stage_initial[0])+SAFE_LIMIT)
             limit_z = (float(self.stage_initial[2])-SAFE_LIMIT, float(self.stage_initial[2])+SAFE_LIMIT)
@@ -118,25 +115,22 @@ class ControllerMPC(Node):
 
         # Define objective function
         def objective(u_hat):
-            # Reshape u_hat (minimize flattens it)
-            H = math.floor(u_hat.size/2)
-            u_hat = np.reshape(u_hat,(H,2), order='C')
-            # # Repeat last control output until covers prediction horizon
-            # u_hat = np.vstack((u_hat, np.repeat([u_hat[H-1]], P-C, axis=0)))
-            y_hat = np.zeros((H,3))
+            H = math.floor(u_hat.size/2)                # How many steps to go
+            u_hat = np.reshape(u_hat,(H,2), order='C')  # Reshape u_hat (minimize flattens it)
+            y_hat = np.zeros((H,3))                     # Initialize y_hat for H next steps
 
             # Initialize prediction
-            y_hat0 = self.tip
+            y_hat0 = np.array(self.tip)
             u_hat0 = np.array([self.stage[0],self.stage[2]])
 
             # Simulate prediction horizon
             for k in range(0,H):
                 yp = process_model(y_hat0, u_hat0, u_hat[k], self.Jc)
                 # Save predicted variable
-                y_hat[k] = yp
+                y_hat[k] = np.array(yp)
                 # Update initial condition for next prediction step
-                y_hat0 = y_hat[k]
-                u_hat0 = u_hat[k]
+                y_hat0 = np.array(y_hat[k])
+                u_hat0 = np.array(u_hat[k])
 
             # Minimization objectives
             wu = 0.0
@@ -205,7 +199,12 @@ class ControllerMPC(Node):
             self.cmd[2] = self.stage[2]
             u = np.array([[self.stage[0], self.stage[1]]])
 
+        # TO MAKE INSERTIONS WITHOUT COMPENSATION (DELETE AFTER)
+        # self.cmd[0] = self.stage_initial[0]
+        # self.cmd[2] = self.stage_initial[2]
+
         # Print values
+        self.get_logger().info('Stage initial: (%f, %f, %f) ' % (self.stage_initial[0], self.stage_initial[1], self.stage_initial[2]))
         self.get_logger().info('Applying trajectory compensation... DO NOT insert the needle now\nTip: (%f, %f, %f) \
             \nTarget: (%f, %f, %f) \nError: (%f, %f, %f) \nDeltaU: (%f, %f)  \nCmd: (%f, %f) \nStage: (%f, %f)' % (self.tip[0],\
             self.tip[1], self.tip[2], self.target[0], self.target[1], self.target[2], error[0], error[1], error[2],\

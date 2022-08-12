@@ -48,10 +48,15 @@ sudo /opt/PlusBuild-bin/bin/./PlusServerLauncher
 	b) Launch sequence
 ros2 launch trajcontrol sequence.launch.py filename:=NAME
 _______________________________________________________________________________________
-8) Launch step-wise compensation
+8) Launch step-wise proportional compensation
 	a) Launch PlusServer
 sudo /opt/PlusBuild-bin/bin/./PlusServerLauncher
 	b) Launch sequence
-ros2 launch trajcontrol step.launch.py K:=0.5 filename:=NAME 
- 
+ros2 launch trajcontrol p_step.launch.py K:=0.5 filename:=NAME 
+_______________________________________________________________________________________
+9) Launch step-wise MPC compensation
+	a) Launch PlusServer
+sudo /opt/PlusBuild-bin/bin/./PlusServerLauncher
+	b) Launch sequence
+ros2 launch trajcontrol mpc_step.launch.py K:=0.5 filename:=NAME 
 
