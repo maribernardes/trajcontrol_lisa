@@ -22,7 +22,7 @@ class Controller(Node):
         super().__init__('controller')
 
         #Declare node parameters
-        self.declare_parameter('K', 0.1) #Controller gain
+        self.declare_parameter('K', 0.5) #Controller gain
 
         #Topics from estimator node
         self.subscription_estimator = self.create_subscription(PoseStamped, '/needle/state/jacobian', self.robot_callback, 10)
@@ -95,7 +95,7 @@ class Controller(Node):
     # Calculates control output and send MoveStage action to robot
     def send_cmd(self):
         # Reduce Jacobian to use angles as free DOF's for control
-        Jc = self.J[0:3,:]
+        Jc = self.J[0:3,:].copy()
 
         # Calculate base inputs delta
         error = self.tip - self.target                          # Calculate control error

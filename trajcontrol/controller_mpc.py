@@ -73,7 +73,7 @@ class ControllerMPC(Node):
         if (self.stage_initial.size == 0):
             # Set stage initial position
             self.stage_initial = np.array([robot.position.x, robot.position.y, robot.position.z])
-            self.cmd = np.array(self.stage_initial)
+            self.cmd = np.copy(self.stage_initial)
             self.get_logger().info('Stage initial: (%f, %f, %f) ' % (self.stage_initial[0], self.stage_initial[1], self.stage_initial[2]))
 
             # Control output limits
@@ -97,7 +97,7 @@ class ControllerMPC(Node):
     # Get current Jacobian matrix from Estimator node
     def jacobian_callback(self, msg):
         J = np.asarray(CvBridge().imgmsg_to_cv2(msg))
-        self.Jc = J[0:3,:]
+        self.Jc = J[0:3,:].copy()
         if (self.robot_idle == True) and (self.target.size != 0) and (self.tip.size != 0):
             self.send_cmd()
 
@@ -120,17 +120,17 @@ class ControllerMPC(Node):
             y_hat = np.zeros((H,3))                     # Initialize y_hat for H next steps
 
             # Initialize prediction
-            y_hat0 = np.array(self.tip)
-            u_hat0 = np.array([self.stage[0],self.stage[2]])
+            y_hat0 = np.copy(self.tip)
+            u_hat0 = np.copy([self.stage[0],self.stage[2]])
 
             # Simulate prediction horizon
             for k in range(0,H):
                 yp = process_model(y_hat0, u_hat0, u_hat[k], self.Jc)
                 # Save predicted variable
-                y_hat[k] = np.array(yp)
+                y_hat[k] = np.copy(yp)
                 # Update initial condition for next prediction step
-                y_hat0 = np.array(y_hat[k])
-                u_hat0 = np.array(u_hat[k])
+                y_hat0 = np.copy(y_hat[k])
+                u_hat0 = np.copy(u_hat[k])
 
             # Minimization objectives
             wu = 0.0
@@ -146,10 +146,36 @@ class ControllerMPC(Node):
             u_init = np.tile(u0,(H,1)) 
             delta_u_hat = u_hat - u_init
 
-            obj1 = np.linalg.norm(tg_xz-y_hat_xz)               # Tip error to target
-            obj2 = np.sum(np.amax(np.absolute(delta_u_hat), axis=0))  # Total base displacement around entry point
+            obj1 = np.linalg.norm(y_hat_xz-tg_xz)                       # Tip error to target
+            obj2 = np.sum(np.amax(np.absolute(delta_u_hat), axis=0))    # Total base displacement around entry point
             obj = obj1 + wu*obj2
             return obj 
+
+        # Define expected error from prediction
+        def expected_error(u_hat):
+            H = math.floor(u_hat.size/2)                # How many steps to go
+            u_hat = np.reshape(u_hat,(H,2), order='C')  # Reshape u_hat (minimize flattens it)
+            y_hat = np.zeros((H,3))                     # Initialize y_hat for H next steps
+
+            # Initialize prediction
+            y_hat0 = np.copy(self.tip)
+            u_hat0 = np.copy([self.stage[0],self.stage[2]])
+
+            # Simulate prediction horizon
+            for k in range(0,H):
+                yp = process_model(y_hat0, u_hat0, u_hat[k], self.Jc)
+                # Save predicted variable
+                y_hat[k] = np.copy(yp)
+                # Update initial condition for next prediction step
+                y_hat0 = np.copy(y_hat[k])
+                u_hat0 = np.copy(u_hat[k])
+
+            #This considers only final tip and target
+            tg_xz = np.array([self.target[0],self.target[2]])   # Build target without depth
+            y_hat_xz = np.array([y_hat[-1,0],y_hat[-1,2]])      # Build last tip prediction without depth
+
+            err = y_hat_xz-tg_xz
+            return err 
 
     ########################################################################
 
@@ -203,12 +229,15 @@ class ControllerMPC(Node):
         # self.cmd[0] = self.stage_initial[0]
         # self.cmd[2] = self.stage_initial[2]
 
+        # Expected final error
+        exp_err = expected_error(u)
+
         # Print values
-        self.get_logger().info('Stage initial: (%f, %f, %f) ' % (self.stage_initial[0], self.stage_initial[1], self.stage_initial[2]))
         self.get_logger().info('Applying trajectory compensation... DO NOT insert the needle now\nTip: (%f, %f, %f) \
             \nTarget: (%f, %f, %f) \nError: (%f, %f, %f) \nDeltaU: (%f, %f)  \nCmd: (%f, %f) \nStage: (%f, %f)' % (self.tip[0],\
             self.tip[1], self.tip[2], self.target[0], self.target[1], self.target[2], error[0], error[1], error[2],\
             u[0,0] - self.stage[0], u[0,1] - self.stage[2], self.cmd[0], self.cmd[2], self.stage[0], self.stage[2]))    
+        self.get_logger().info('Expected final error: (%f, %f) ' % (exp_err[0], exp_err[1]))
 
         # Send command to stage
         self.robot_idle = False
