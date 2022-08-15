@@ -138,7 +138,7 @@ class ControllerMPC(Node):
             tg_xz = np.tile([self.target[0],self.target[2]],(H,1))      # Build target without depth
             y_hat_xz = np.array([y_hat[:,0],y_hat[:,2]]).T              # Build tip prediction without depth
 
-            ##This considers only final tip and target
+            ##This considers only final step error
             # tg_xz = np.array([self.target[0],self.target[2]])   # Build target without depth
             # y_hat_xz = np.array([y_hat[-1,0],y_hat[-1,2]])      # Build last tip prediction without depth
 
@@ -151,7 +151,7 @@ class ControllerMPC(Node):
             obj = obj1 + wu*obj2
             return obj 
 
-        # Define expected error from prediction
+        # Calculates expected insertion final error (from prediction)
         def expected_error(u_hat):
             H = math.floor(u_hat.size/2)                # How many steps to go
             u_hat = np.reshape(u_hat,(H,2), order='C')  # Reshape u_hat (minimize flattens it)
@@ -223,7 +223,7 @@ class ControllerMPC(Node):
         else:   # Finished all insertion steps
             self.cmd[0] = self.stage[0]
             self.cmd[2] = self.stage[2]
-            u = np.array([[self.stage[0], self.stage[1]]])
+            u = np.array([[self.stage[0], self.stage[2]]])
 
         # TO MAKE INSERTIONS WITHOUT COMPENSATION (DELETE AFTER)
         # self.cmd[0] = self.stage_initial[0]
