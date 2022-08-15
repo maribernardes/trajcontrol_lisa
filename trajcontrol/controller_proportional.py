@@ -22,7 +22,7 @@ class Controller(Node):
         super().__init__('controller')
 
         #Declare node parameters
-        self.declare_parameter('K', 0.5) #Controller gain
+        self.declare_parameter('K', 0.05) #Controller gain
 
         #Topics from estimator node
         self.subscription_estimator = self.create_subscription(PoseStamped, '/needle/state/jacobian', self.robot_callback, 10)
@@ -158,9 +158,10 @@ class Controller(Node):
             self.get_logger().info('Goal succeeded! Result: %f, %f' %(result.x*1000, result.z*1000))
             self.get_logger().info('Tip: (%f, %f, %f)'   % (self.tip[0], self.tip[1], self.tip[2]))
              # Check if max depth reached
-            if (abs(self.tip[1]-self.target[1]) <= DEPTH_MARGIN): 
+            # if (abs(self.tip[1]-self.target[1]) <= DEPTH_MARGIN): 
+            if (abs(self.depth) >= abs(self.target[1])):
                 self.robot_idle = False
-                self.get_logger().info('ATTENTION: Depth margin reached! Please stop insertion')                
+                self.get_logger().info('ATTENTION: Insertion depth reached! Please stop insertion')                
             else:
                 self.robot_idle = True
                 self.get_logger().info('Depth count: %.1fmm. Please insert %.1fmm more, then hit SPACE' % (self.stage[1], INSERTION_STEP))      
