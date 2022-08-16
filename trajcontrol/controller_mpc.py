@@ -1,8 +1,10 @@
-from curses import keyname
 import rclpy
 import numpy as np
 import time
 import math
+import os 
+
+from scipy.io import savemat
 
 from rclpy.node import Node
 from rclpy.action import ActionClient
@@ -64,6 +66,10 @@ class ControllerMPC(Node):
         self.insertion_length = self.get_parameter('insertion_length').get_parameter_value().double_value
         self.ns = math.floor(self.insertion_length/INSERTION_STEP)
         self.get_logger().info('MPC max horizon for this trial: H = %f' %(self.ns))
+
+        # Prediction (save to mat file)
+        self.u_pred = np.empty((self.ns,self.ns,2))
+        self.y_pred = np.empty((self.ns,self.ns,3))
 
     # Get current base pose
     def robot_callback(self, msg_robot):
@@ -169,6 +175,14 @@ class ControllerMPC(Node):
                 # Update initial condition for next prediction step
                 y_hat0 = np.copy(y_hat[k])
                 u_hat0 = np.copy(u_hat[k])
+
+            # Save prediction to mat file
+            step = math.floor(self.depth/INSERTION_STEP)
+            self.u_pred[step,0:H,:] = np.copy(u_hat)
+            self.y_pred[step,0:H,:] = np.copy(y_hat)
+            filename = os.path.join(os.getcwd(),'src','trajcontrol','data','predictions.mat') #String with full path to file
+            savemat(filename, {'up':u_pred, 'yp':y_pred})
+
 
             #This considers only final tip and target
             tg_xz = np.array([self.target[0],self.target[2]])   # Build target without depth
