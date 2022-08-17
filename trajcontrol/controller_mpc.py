@@ -27,6 +27,8 @@ class ControllerMPC(Node):
 
         #Declare node parameters
         self.declare_parameter('insertion_length', -100.0) #Insertion length parameter
+        self.declare_parameter('filename', 'my_data') #Name of file where data values are saved
+        self.filename = os.path.join(os.getcwd(),'src','trajcontrol','data',self.get_parameter('filename').get_parameter_value().string_value + '_pred.mat') #String with full path to file
 
         #Topics from sensor processing node
         self.subscription_tip = self.create_subscription(PoseStamped, '/sensor/tip', self.tip_callback, 10)
@@ -68,8 +70,8 @@ class ControllerMPC(Node):
         self.get_logger().info('MPC max horizon for this trial: H = %f' %(self.ns))
 
         # Prediction (save to mat file)
-        self.u_pred = np.empty((self.ns-1,self.ns-1,2))
-        self.y_pred = np.empty((self.ns-1,self.ns-1,3))
+        self.u_pred = np.zeros((self.ns-1,self.ns-1,2))
+        self.y_pred = np.zeros((self.ns-1,self.ns-1,3))
 
     # Get current base pose
     def robot_callback(self, msg_robot):
@@ -173,8 +175,9 @@ class ControllerMPC(Node):
             step = math.floor(self.depth/INSERTION_STEP)-1
             self.u_pred[step,0:H,:] = np.copy(u_hat)
             self.y_pred[step,0:H,:] = np.copy(y_hat)
-            filename = os.path.join(os.getcwd(),'src','trajcontrol','data','predictions.mat') #String with full path to file
-            savemat(filename, {'up':self.u_pred, 'yp':self.y_pred})
+            self.get_logger().info('Step = %i' %(step))
+            self.get_logger().info('U_pred = %s' %(self.u_pred))
+            savemat(self.filename, {'u_pred':self.u_pred, 'y_pred':self.y_pred})
 
             #This considers only final tip and target
             tg_xz = np.array([self.target[0],self.target[2]])   # Build target without depth

@@ -64,7 +64,8 @@ def generate_launch_description():
         package = "trajcontrol",
         executable = "controller_mpc",
         parameters = [
-            {"insertion_length": -100.0}
+            {"insertion_length": -100.0},
+            {"filename": LaunchConfiguration('filename')}
             ]
     )   
 
