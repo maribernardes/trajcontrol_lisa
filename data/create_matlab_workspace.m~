@@ -2,8 +2,8 @@ clear; close all; clc;
 
 %% Get .csv file into table T
 trial = 00;
-folder = 'tests';
-name = 'test_';
+folder = '2022-08-15';
+name = 'test_csv_';
 
 %% Load Dataset
 % Read data from table
@@ -85,7 +85,7 @@ end
 key = [1; diff(base(2,:))']/-5;
 
 % Load predictions from mat file
-load(strcat(folder,'/',name,num2str(trial,'%2.2d'),'_pred.mat'));
+load(strcat(folder,'/',name,num2str(trial,'%2.2d'),'_pred.mat'), 'HeaderLines',1);
 
 %% Configure simulationb
 N = size(u_pred,1);  % data size
@@ -102,7 +102,7 @@ for i=1:N
     yp{i} = [yx' yy' yz']; 
 end
 
-save(strcat('Matlab/',folder,'/',name,num2str(trial,'%2.2d'),'.mat'), 't','aurora_tip', 'tip','base', 'X', 'Z', 'J', 'cmd', 'target', 'base_init', 'key', 'up', 'yp');
+save(strcat('Matlab/',folder,'/',name,num2str(trial,'%2.2d'),'.mat'), 't','aurora_tip', 'tip','base', 'X', 'Z', 'J', 'cmd', 'target', 'base_init', 'key');
 
 function [horizontal, vertical]= get_needle_angles(quat)
     q = quaternion(quat);

@@ -5,18 +5,15 @@ global safe_limit;
 global base_init;
 global target;
 global T;
-global K;
 
 %% Load Dataset
 trial = 01;
-folder = '2022-07-26';
-name = 'trialc_';
+folder = '2022-08-15';
+name = 'trialg_';
 load(strcat(folder,'/',name,num2str(trial,'%2.2d'),'.mat'));
 
-%% Configure simulation
+%% Configure simulationb
 N = size(X,2);  % data size
-alpha = 0.65; 
-K = 0.05;
 safe_limit = 6;
 base_init = base(:,1);
 
@@ -38,10 +35,10 @@ end
 
 %% Plot control error to target
 figure(1);
-plot(t, err(1,:),'.-', t, err(2,:),'.-', t, err(3,:),'.-')
+plot(t, err(1,:),'.-', t, err(3,:),'.-')
 hold on;
 plot_key('--g');
-title('Error to target'),xlabel('time [s]'),ylabel('err [mm]'),  legend('X', 'Y', 'Z')
+title('Error to target'),xlabel('time [s]'),ylabel('err [mm]'),  legend('X', 'Z')
 
 % Control output
 figure(2);
@@ -77,6 +74,11 @@ plot_target_Z('--r')
 plot_key('--g');
 
 xlabel('time [s]'),ylabel('Z [mm]')
+
+fprintf('Final error X [mm] = %0.4f\n', abs(err(1,end)));
+fprintf('Final error Y [mm] = %0.4f\n', abs(err(2,end)));
+fprintf('Final error Z [mm] = %0.4f\n', abs(err(3,end)));
+fprintf('Final error 3D[mm] = %0.4f\n', sqrt(err(1,end)^2+err(2,end)^2+err(3,end)^2));
 
 
 function plot_target(line)

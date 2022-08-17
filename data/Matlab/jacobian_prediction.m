@@ -3,8 +3,8 @@ clear; close all; clc;
 
 %% Load Dataset
 trial = 03;
-folder = '2022-07-20';
-name = 'trialb_';
+folder = '2022-08-15';
+name = 'trialg_';
 load(strcat(folder,'/',name,num2str(trial,'%2.2d'),'.mat'));
 
 %% Configure simulation
