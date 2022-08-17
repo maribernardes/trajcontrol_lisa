@@ -68,8 +68,8 @@ class ControllerMPC(Node):
         self.get_logger().info('MPC max horizon for this trial: H = %f' %(self.ns))
 
         # Prediction (save to mat file)
-        self.u_pred = np.empty((self.ns,self.ns,2))
-        self.y_pred = np.empty((self.ns,self.ns,3))
+        self.u_pred = np.empty((self.ns-1,self.ns-1,2))
+        self.y_pred = np.empty((self.ns-1,self.ns-1,3))
 
     # Get current base pose
     def robot_callback(self, msg_robot):
@@ -138,8 +138,7 @@ class ControllerMPC(Node):
                 y_hat0 = np.copy(y_hat[k])
                 u_hat0 = np.copy(u_hat[k])
 
-            # Minimization objectives
-            wu = 0.0
+            # Minimization objective
             ##This considers all remaining insertion steps (minimizes error to trajectory, not only target)
             tg_xz = np.tile([self.target[0],self.target[2]],(H,1))      # Build target without depth
             y_hat_xz = np.array([y_hat[:,0],y_hat[:,2]]).T              # Build tip prediction without depth
@@ -148,13 +147,7 @@ class ControllerMPC(Node):
             # tg_xz = np.array([self.target[0],self.target[2]])   # Build target without depth
             # y_hat_xz = np.array([y_hat[-1,0],y_hat[-1,2]])      # Build last tip prediction without depth
 
-            u0 = np.array([self.stage_initial[0], self.stage_initial[2]])
-            u_init = np.tile(u0,(H,1)) 
-            delta_u_hat = u_hat - u_init
-
-            obj1 = np.linalg.norm(y_hat_xz-tg_xz)                       # Tip error to target
-            obj2 = np.sum(np.amax(np.absolute(delta_u_hat), axis=0))    # Total base displacement around entry point
-            obj = obj1 + wu*obj2
+            obj = np.linalg.norm(y_hat_xz-tg_xz)                    # Tip error to target
             return obj 
 
         # Calculates expected insertion final error (from prediction)
@@ -177,12 +170,11 @@ class ControllerMPC(Node):
                 u_hat0 = np.copy(u_hat[k])
 
             # Save prediction to mat file
-            step = math.floor(self.depth/INSERTION_STEP)
+            step = math.floor(self.depth/INSERTION_STEP)-1
             self.u_pred[step,0:H,:] = np.copy(u_hat)
             self.y_pred[step,0:H,:] = np.copy(y_hat)
             filename = os.path.join(os.getcwd(),'src','trajcontrol','data','predictions.mat') #String with full path to file
-            savemat(filename, {'up':u_pred, 'yp':y_pred})
-
+            savemat(filename, {'up':self.u_pred, 'yp':self.y_pred})
 
             #This considers only final tip and target
             tg_xz = np.array([self.target[0],self.target[2]])   # Build target without depth
@@ -234,6 +226,10 @@ class ControllerMPC(Node):
             self.cmd[2] = min(self.cmd[2], 90.0)
             self.cmd[2] = max(self.cmd[2], 0.0)
 
+            # Expected final error
+            exp_err = expected_error(u)
+            self.get_logger().info('Expected final error: (%f, %f) ' % (exp_err[0], exp_err[1]))
+
         else:   # Finished all insertion steps
             self.cmd[0] = self.stage[0]
             self.cmd[2] = self.stage[2]
@@ -243,15 +239,12 @@ class ControllerMPC(Node):
         # self.cmd[0] = self.stage_initial[0]
         # self.cmd[2] = self.stage_initial[2]
 
-        # Expected final error
-        exp_err = expected_error(u)
-
+    
         # Print values
         self.get_logger().info('Applying trajectory compensation... DO NOT insert the needle now\nTip: (%f, %f, %f) \
             \nTarget: (%f, %f, %f) \nError: (%f, %f, %f) \nDeltaU: (%f, %f)  \nCmd: (%f, %f) \nStage: (%f, %f)' % (self.tip[0],\
             self.tip[1], self.tip[2], self.target[0], self.target[1], self.target[2], error[0], error[1], error[2],\
             u[0,0] - self.stage[0], u[0,1] - self.stage[2], self.cmd[0], self.cmd[2], self.stage[0], self.stage[2]))    
-        self.get_logger().info('Expected final error: (%f, %f) ' % (exp_err[0], exp_err[1]))
 
         # Send command to stage
         self.robot_idle = False
