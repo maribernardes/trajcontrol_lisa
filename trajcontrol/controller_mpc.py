@@ -175,8 +175,6 @@ class ControllerMPC(Node):
             step = math.floor(self.depth/INSERTION_STEP)-1
             self.u_pred[step,0:H,:] = np.copy(u_hat)
             self.y_pred[step,0:H,:] = np.copy(y_hat)
-            self.get_logger().info('Step = %i' %(step))
-            self.get_logger().info('U_pred = %s' %(self.u_pred))
             savemat(self.filename, {'u_pred':self.u_pred, 'y_pred':self.y_pred})
 
             #This considers only final tip and target
