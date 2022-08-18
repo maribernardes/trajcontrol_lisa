@@ -1,7 +1,7 @@
 clear; close all; clc;
 
 %% Get .csv file into table T
-trial = 02;
+trial = 04;
 folder = '2022-08-17';
 name = 'trialh_';
 

@@ -6,7 +6,7 @@ global base_init;
 INSERTION_STEP = -5;
 
 %% Load Dataset
-trial = 02;
+trial = 04;
 folder = '2022-08-17';
 name = 'trialh_';
 load(strcat(folder,'/',name,num2str(trial,'%2.2d'),'.mat'));
