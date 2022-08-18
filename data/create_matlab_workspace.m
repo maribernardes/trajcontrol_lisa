@@ -1,9 +1,9 @@
 clear; close all; clc;
 
 %% Get .csv file into table T
-trial = 00;
-folder = 'tests';
-name = 'test_';
+trial = 02;
+folder = '2022-08-17';
+name = 'trialh_';
 
 %% Load Dataset
 % Read data from table

@@ -2,9 +2,9 @@
 clear; close all; clc;
 
 %% Load Dataset
-trial = 02;
-folder = '2022-08-05';
-name = 'triale_';
+trial = 01;
+folder = '2022-08-17';
+name = 'trialh_';
 load(strcat(folder,'/',name,num2str(trial,'%2.2d'),'.mat'));
 
 
