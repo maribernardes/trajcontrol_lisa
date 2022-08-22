@@ -16,6 +16,8 @@ from sensor_msgs.msg import Image
 from stage_control_interfaces.action import MoveStage
 from scipy.optimize import minimize
 from trajcontrol.sensor_processing import INSERTION_STEP
+from trajcontrol.estimator import get_angles
+
 
 SAFE_LIMIT = 6.0    # Maximum control output delta from entry point [mm]
 DEPTH_MARGIN = 1.5  # Final insertion length margin [mm]
@@ -56,14 +58,14 @@ class ControllerMPC(Node):
         np.set_printoptions(formatter={'float': lambda x: "{0:0.4f}".format(x)})
 
         # Stored values
-        self.tip = np.empty(shape=[0,3])            # Current needle tip x and z (from aurora)
+        self.tip = np.empty(shape=[0,5])            # Current needle tip x and z (from aurora)
         self.stage_initial = np.empty(shape=[0,3])  # Stage initial position
         self.stage = np.empty(shape=[0,3])          # Current stage position
-        self.target = np.empty(shape=[0,3])         # Target 
+        self.target = np.empty(shape=[0,5])         # Target 
         self.cmd = np.empty(shape=[0,3])            # Control output to the robot stage
         self.depth = 0.0                            # Current insertion depth
         self.robot_idle = True                      # Stage move action status
-        self.Jc = np.zeros((3,3))
+        self.Jc = np.zeros((5,3))
 
         self.insertion_length = self.get_parameter('insertion_length').get_parameter_value().double_value
         self.ns = math.floor(self.insertion_length/INSERTION_STEP)
@@ -94,18 +96,20 @@ class ControllerMPC(Node):
     def target_callback(self, msg):
         if (self.target.size == 0):
             target = msg.point
-            self.target = np.array([target.x, target.y, target.z])
-            self.get_logger().info('Target: (%f, %f, %f) ' % (self.target[0], self.target[1], self.target[2]))
+            self.target = np.array([target.x, target.y, target.z, 0.0, 0.0])
+            self.get_logger().info('Target: (%f, %f, %f, %f, %f) ' % (self.target[0], self.target[1], self.target[2], self.target[3], self.target[4]))
 
-    # Get current tip pose
+    # Get current needle tip from sensor processing node
+    # tip = [x_tip, y_tip, z_tip, angle_horiz, angle_vert]  
     def tip_callback(self, msg):
-        tip = msg.pose
-        self.tip = np.array([tip.position.x, tip.position.y, tip.position.z])
+        quat = np.array([msg.pose.orientation.w, msg.pose.orientation.x, msg.pose.orientation.y, msg.pose.orientation.z])
+        angles = get_angles(quat)
+        self.tip = np.array([msg.pose.position.x, msg.pose.position.y, msg.pose.position.z, angles[0], angles[1]])
 
     # Get current Jacobian matrix from Estimator node
     def jacobian_callback(self, msg):
         J = np.asarray(CvBridge().imgmsg_to_cv2(msg))
-        self.Jc = J[0:3,:].copy()
+        self.Jc = J.copy()
         if (self.robot_idle == True) and (self.target.size != 0) and (self.tip.size != 0):
             self.send_cmd()
 
@@ -125,7 +129,7 @@ class ControllerMPC(Node):
         def objective(u_hat):
             H = math.floor(u_hat.size/2)                # How many steps to go
             u_hat = np.reshape(u_hat,(H,2), order='C')  # Reshape u_hat (minimize flattens it)
-            y_hat = np.zeros((H,3))                     # Initialize y_hat for H next steps
+            y_hat = np.zeros((H,5))                     # Initialize y_hat for H next steps
 
             # Initialize prediction
             y_hat0 = np.copy(self.tip)
@@ -142,8 +146,8 @@ class ControllerMPC(Node):
 
             # Minimization objective
             ##This considers all remaining insertion steps (minimizes error to trajectory, not only target)
-            tg_xz = np.tile([self.target[0],self.target[2]],(H,1))      # Build target without depth
-            y_hat_xz = np.array([y_hat[:,0],y_hat[:,2]]).T              # Build tip prediction without depth
+            tg_xz = np.tile([self.target[0],self.target[2],self.target[3],self.target[4]],(H,1))    # Build target without depth and with angles
+            y_hat_xz = np.array([y_hat[:,0],y_hat[:,2],y_hat[:,3],y_hat[:,4]]).T                    # Build tip prediction without depth
 
             ##This considers only final step error
             # tg_xz = np.array([self.target[0],self.target[2]])   # Build target without depth
@@ -154,7 +158,7 @@ class ControllerMPC(Node):
 
             K1 = 1.0                                
             K2 = 0.0
-            obj1 = np.linalg.norm(y_hat_xz-tg_xz)       # Trajectory error to target
+            obj1 = np.linalg.norm(y_hat_xz-tg_xz)       # Trajectory error 
             obj2 = np.linalg.norm(delta_u_hat)          # Delta_u
             obj = K1*obj1 + K2*obj2
             return obj 
@@ -163,7 +167,7 @@ class ControllerMPC(Node):
         def expected_error(u_hat):
             H = math.floor(u_hat.size/2)                # How many steps to go
             u_hat = np.reshape(u_hat,(H,2), order='C')  # Reshape u_hat (minimize flattens it)
-            y_hat = np.zeros((H,3))                     # Initialize y_hat for H next steps
+            y_hat = np.zeros((H,5))                     # Initialize y_hat for H next steps
 
             # Initialize prediction
             y_hat0 = np.copy(self.tip)
@@ -185,8 +189,8 @@ class ControllerMPC(Node):
             savemat(self.filename, {'u_pred':self.u_pred, 'y_pred':self.y_pred})
 
             #This considers only final tip and target
-            tg_xz = np.array([self.target[0],self.target[2]])   # Build target without depth
-            y_hat_xz = np.array([y_hat[-1,0],y_hat[-1,2]])      # Build last tip prediction without depth
+            tg_xz = np.array([self.target[0],self.target[2],self.target[3],self.target[4]]) # Build target without depth
+            y_hat_xz = np.array([y_hat[-1,0],y_hat[-1,2],y_hat[-1,3],y_hat[-1,4]])          # Build last tip prediction without depth
 
             err = y_hat_xz-tg_xz
             return err 
@@ -236,7 +240,7 @@ class ControllerMPC(Node):
 
             # Expected final error
             exp_err = expected_error(u)
-            self.get_logger().info('Expected final error: (%f, %f) ' % (exp_err[0], exp_err[1]))
+            self.get_logger().info('Expected final error: (%f, %f, %f, %f) ' % (exp_err[0], exp_err[1], exp_err[2], exp_err[3]))
 
         else:   # Finished all insertion steps
             self.cmd[0] = self.stage[0]
@@ -246,7 +250,6 @@ class ControllerMPC(Node):
         # TO MAKE INSERTIONS WITHOUT COMPENSATION (DELETE AFTER)
         # self.cmd[0] = self.stage_initial[0]
         # self.cmd[2] = self.stage_initial[2]
-
     
         # Print values
         self.get_logger().info('Applying trajectory compensation... DO NOT insert the needle now\nTip: (%f, %f, %f) \

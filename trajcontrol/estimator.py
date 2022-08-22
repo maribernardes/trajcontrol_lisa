@@ -84,32 +84,27 @@ class Estimator(Node):
 
     # Update Jacobian from current base inputs and tip pose
     def update_jacobian(self):
-            # Calculate deltaTX and deltaTZ between current and previous values         
-            deltaTX = ((self.TX.sec*1e9 + self.TX.nanosec) - (self.TXant.sec*1e9 + self.TXant.nanosec))*1e-9    
-            deltaTZ = ((self.TZ.sec*1e9 + self.TZ.nanosec) - (self.TZant.sec*1e9 + self.TZant.nanosec))*1e-9    
+        
+        deltaX = (self.X - self.Xant)
+        deltaZ = (self.Z - self.Zant)
+        # Update Jacobian
+        self.J = self.J + self.alpha*np.outer((deltaZ-np.matmul(self.J, deltaX))/(np.matmul(np.transpose(deltaX), deltaX)+1e-9), deltaX)
 
-            # Do Jacobian update only when current and previous X/Z are different
-            if (deltaTX != 0) and (deltaTZ != 0):
-                deltaX = (self.X - self.Xant)/deltaTX
-                deltaZ = (self.Z - self.Zant)/deltaTZ
-                # Update Jacobian
-                self.J = self.J + self.alpha*np.outer((deltaZ-np.matmul(self.J, deltaX))/(np.matmul(np.transpose(deltaX), deltaX)+1e-9), deltaX)
+        # Save previous values for next estimation
+        self.Zant = self.Z
+        self.TZant = self.TZ
+        self.Xant = self.X
+        self.TXant = self.TX
 
-                # Save previous values for next estimation
-                self.Zant = self.Z
-                self.TZant = self.TZ
-                self.Xant = self.X
-                self.TXant = self.TX
+        # Save updated Jacobian in file
+        if (self.save_J == True):
+            self.get_logger().debug('Save Jacobian transform %s' %(self.J))
+            savetxt(os.path.join(os.getcwd(),'src','trajcontrol','files','jacobian.csv'), asarray(self.J), delimiter=',')
 
-                # Save updated Jacobian in file
-                if (self.save_J == True):
-                    self.get_logger().debug('Save Jacobian transform %s' %(self.J))
-                    savetxt(os.path.join(os.getcwd(),'src','trajcontrol','files','jacobian.csv'), asarray(self.J), delimiter=',')
-
-            # Publish current Jacobian
-            msg = CvBridge().cv2_to_imgmsg(self.J)
-            msg.header.stamp = self.get_clock().now().to_msg()
-            self.publisher_jacobian.publish(msg)
+        # Publish current Jacobian
+        msg = CvBridge().cv2_to_imgmsg(self.J)
+        msg.header.stamp = self.get_clock().now().to_msg()
+        self.publisher_jacobian.publish(msg)
 
 
 ########################################################################
