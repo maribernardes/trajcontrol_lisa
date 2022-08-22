@@ -87,6 +87,7 @@ class Estimator(Node):
         
         deltaX = (self.X - self.Xant)
         deltaZ = (self.Z - self.Zant)
+        
         # Update Jacobian
         self.J = self.J + self.alpha*np.outer((deltaZ-np.matmul(self.J, deltaX))/(np.matmul(np.transpose(deltaX), deltaX)+1e-9), deltaX)
 

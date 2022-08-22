@@ -22,10 +22,10 @@ from trajcontrol.estimator import get_angles
 SAFE_LIMIT = 6.0    # Maximum control output delta from entry point [mm]
 DEPTH_MARGIN = 1.5  # Final insertion length margin [mm]
 
-class ControllerMPC(Node):
+class ControllerMPC2(Node):
 
     def __init__(self):
-        super().__init__('controller_mpc')
+        super().__init__('controller_mpc2')
 
         #Declare node parameters
         self.declare_parameter('insertion_length', -100.0) #Insertion length parameter
@@ -73,7 +73,7 @@ class ControllerMPC(Node):
 
         # Prediction (save to mat file)
         self.u_pred = np.zeros((self.ns-1,self.ns-1,2))
-        self.y_pred = np.zeros((self.ns-1,self.ns-1,3))
+        self.y_pred = np.zeros((self.ns-1,self.ns-1,5))
 
     # Get current base pose
     def robot_callback(self, msg_robot):
@@ -210,16 +210,20 @@ class ControllerMPC(Node):
             # self.get_logger().info('Initial SSE Objective: %f' % (objective(u_hat)))  # calculate cost function with initial guess
 
             # MPC calculation
-            # start_time = time.time()
+            start_time = time.time()
             solution = minimize(objective, u_hat, method='SLSQP', bounds=self.limit*H)    # optimizes the objective function
             u = np.reshape(solution.x,(H,2), order='C')                                 # reshape solution (minimize flattens it)
-            # end_time = time.time()
-            
-            # cost = objective(u)
-            # self.get_logger().info('Final SSE Objective: %f' % (cost)) # calculate cost function with optimization result
+            end_time = time.time()
+            cost = objective(u)
+
+            # Summarize the result
+            self.get_logger().info('Success : %s' % solution['message'])
+            self.get_logger().info('Status : %s' % solution['message'])
+            self.get_logger().info('Total Evaluations: %d' % solution['nfev'])
+            self.get_logger().info('Final SSE Objective: %f' % (cost)) # calculate cost function with optimization result
+            self.get_logger().info('Elapsed time: %f' % (end_time-start_time))
             self.get_logger().info('Solution: %s' % (u)) # calculate cost function with optimization result
-            # self.get_logger().info('Elapsed time: %f' % (end_time-start_time))
-            
+
             # Update controller output
             self.cmd[0] = u[0,0]
             self.cmd[1] = self.cmd[1]+INSERTION_STEP
@@ -234,8 +238,8 @@ class ControllerMPC(Node):
 
             # Test for stage limits
             self.cmd[0] = min(self.cmd[0], 0.0)
-            self.cmd[0] = max(self.cmd[0], -90.0)
-            self.cmd[2] = min(self.cmd[2], 90.0)
+            self.cmd[0] = max(self.cmd[0], -95.0)
+            self.cmd[2] = min(self.cmd[2], 95.0)
             self.cmd[2] = max(self.cmd[2], 0.0)
 
             # Expected final error
@@ -307,14 +311,14 @@ class ControllerMPC(Node):
 def main(args=None):
     rclpy.init(args=args)
 
-    controller_mpc = ControllerMPC()
+    controller_mpc2 = ControllerMPC2()
 
     # global P
     # global C
     # P = controller_mpc.get_parameter('P').get_parameter_value().integer_value
     # C = controller_mpc.get_parameter('C').get_parameter_value().integer_value
 
-    rclpy.spin(controller_mpc)
+    rclpy.spin(controller_mpc2)
 
     # Destroy the node explicitly
     # (optional - otherwise it will be done automatically

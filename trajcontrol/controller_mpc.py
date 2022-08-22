@@ -206,15 +206,19 @@ class ControllerMPC(Node):
             # self.get_logger().info('Initial SSE Objective: %f' % (objective(u_hat)))  # calculate cost function with initial guess
 
             # MPC calculation
-            # start_time = time.time()
+            start_time = time.time()
             solution = minimize(objective, u_hat, method='SLSQP', bounds=self.limit*H)    # optimizes the objective function
             u = np.reshape(solution.x,(H,2), order='C')                                 # reshape solution (minimize flattens it)
-            # end_time = time.time()
+            end_time = time.time()
+            cost = objective(u)
             
-            # cost = objective(u)
-            # self.get_logger().info('Final SSE Objective: %f' % (cost)) # calculate cost function with optimization result
+            # Summarize the result
+            self.get_logger().info('Success : %s' % solution['message'])
+            self.get_logger().info('Status : %s' % solution['message'])
+            self.get_logger().info('Total Evaluations: %d' % solution['nfev'])
+            self.get_logger().info('Final SSE Objective: %f' % (cost)) # calculate cost function with optimization result
+            self.get_logger().info('Elapsed time: %f' % (end_time-start_time))
             self.get_logger().info('Solution: %s' % (u)) # calculate cost function with optimization result
-            # self.get_logger().info('Elapsed time: %f' % (end_time-start_time))
             
             # Update controller output
             self.cmd[0] = u[0,0]
@@ -230,8 +234,8 @@ class ControllerMPC(Node):
 
             # Test for stage limits
             self.cmd[0] = min(self.cmd[0], 0.0)
-            self.cmd[0] = max(self.cmd[0], -90.0)
-            self.cmd[2] = min(self.cmd[2], 90.0)
+            self.cmd[0] = max(self.cmd[0], -95.0)
+            self.cmd[2] = min(self.cmd[2], 95.0)
             self.cmd[2] = max(self.cmd[2], 0.0)
 
             # Expected final error
