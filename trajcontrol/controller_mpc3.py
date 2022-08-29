@@ -22,13 +22,14 @@ from trajcontrol.estimator import get_angles
 SAFE_LIMIT = 6.0    # Maximum control output delta from entry point [mm]
 DEPTH_MARGIN = 1.5  # Final insertion length margin [mm]
 
-class ControllerMPC2(Node):
+class ControllerMPC3(Node):
 
     def __init__(self):
-        super().__init__('controller_mpc2')
+        super().__init__('controller_mpc3')
 
         #Declare node parameters
         self.declare_parameter('insertion_length', -100.0) #Insertion length parameter
+        self.declare_parameter('H', 5) #Insertion length parameter
         self.declare_parameter('filename', 'my_data') #Name of file where data values are saved
         self.filename = os.path.join(os.getcwd(),'src','trajcontrol','data',self.get_parameter('filename').get_parameter_value().string_value + '_pred.mat') #String with full path to file
 
@@ -68,8 +69,8 @@ class ControllerMPC2(Node):
         self.Jc = np.zeros((5,3))
 
         self.insertion_length = self.get_parameter('insertion_length').get_parameter_value().double_value
-        self.ns = math.floor(self.insertion_length/INSERTION_STEP)
-        self.get_logger().info('MPC max horizon for this trial: H = %f' %(self.ns))
+        self.ns = self.get_parameter('H').get_parameter_value().integer_value
+        self.get_logger().info('MPC 3 horizon for this trial: H = %f' %(self.ns))
 
         # Prediction (save to mat file)
         self.u_pred = np.zeros((self.ns-1,self.ns-1,2))
@@ -201,7 +202,8 @@ class ControllerMPC2(Node):
         error = self.tip - self.target  
 
         # MPC Initialization
-        H = self.ns - math.floor(self.depth/INSERTION_STEP)    # Horizon size
+        H = min(self.ns, math.floor(self.insertion_length/INSERTION_STEP) - math.floor(self.depth/INSERTION_STEP))
+        
         if (H > 0):         # Continue insertion steps
             u0 = np.array([self.cmd[0], self.cmd[2]])
             u_hat = np.tile(u0, (H,1))   # Initial control guess using last cmd value (vector with remaining horizon size)
@@ -311,19 +313,19 @@ class ControllerMPC2(Node):
 def main(args=None):
     rclpy.init(args=args)
 
-    controller_mpc2 = ControllerMPC2()
+    controller_mpc3 = ControllerMPC3()
 
     # global P
     # global C
     # P = controller_mpc.get_parameter('P').get_parameter_value().integer_value
     # C = controller_mpc.get_parameter('C').get_parameter_value().integer_value
 
-    rclpy.spin(controller_mpc2)
+    rclpy.spin(controller_mpc3)
 
     # Destroy the node explicitly
     # (optional - otherwise it will be done automatically
     # when the garbage collector destroys the node object)
-    controller_mpc2.destroy_node()
+    controller_mpc3.destroy_node()
     rclpy.shutdown()
 
 if __name__ == '__main__':

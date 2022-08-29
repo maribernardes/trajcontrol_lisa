@@ -34,6 +34,7 @@ setup(
             'controller_proportional = trajcontrol.controller_proportional:main',
             'controller_mpc = trajcontrol.controller_mpc:main',
             'controller_mpc2 = trajcontrol.controller_mpc2:main',
+            'controller_mpc3 = trajcontrol.controller_mpc3:main',
             'registration = trajcontrol.registration:main',
             'save_file = trajcontrol.save_file:main',
         ],
