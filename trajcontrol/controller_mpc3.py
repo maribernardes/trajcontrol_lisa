@@ -69,12 +69,13 @@ class ControllerMPC3(Node):
         self.Jc = np.zeros((5,3))
 
         self.insertion_length = self.get_parameter('insertion_length').get_parameter_value().double_value
-        self.ns = self.get_parameter('H').get_parameter_value().integer_value
-        self.get_logger().info('MPC 3 horizon for this trial: H = %f' %(self.ns))
+        self.H = self.get_parameter('H').get_parameter_value().integer_value
+        self.ns = math.floor(self.insertion_length/INSERTION_STEP)
+        self.get_logger().info('MPC 3 horizon for this trial: H = %f in %i steps' %(self.H, self.ns))
 
         # Prediction (save to mat file)
-        self.u_pred = np.zeros((self.ns-1,self.ns-1,2))
-        self.y_pred = np.zeros((self.ns-1,self.ns-1,5))
+        self.u_pred = np.zeros((self.ns,self.H,2))
+        self.y_pred = np.zeros((self.ns,self.H,5))
 
     # Get current base pose
     def robot_callback(self, msg_robot):
@@ -184,9 +185,12 @@ class ControllerMPC3(Node):
                 u_hat0 = np.copy(u_hat[k])
 
             # Save prediction to mat file
-            step = math.floor(self.depth/INSERTION_STEP)-1
-            self.u_pred[step,0:H,:] = np.copy(u_hat)
-            self.y_pred[step,0:H,:] = np.copy(y_hat)
+            step = math.floor(self.depth/INSERTION_STEP)
+            self.get_logger().info('=====> step = %i' % step)
+            self.get_logger().info('=====> H = %i' % H)
+            self.get_logger().info('=====> u_hat = %s' % u_hat)
+            self.u_pred[step-1,0:H,:] = np.copy(u_hat)
+            self.y_pred[step-1,0:H,:] = np.copy(y_hat)
             savemat(self.filename, {'u_pred':self.u_pred, 'y_pred':self.y_pred})
 
             #This considers only final tip and target
@@ -202,7 +206,8 @@ class ControllerMPC3(Node):
         error = self.tip - self.target  
 
         # MPC Initialization
-        H = min(self.ns, math.floor(self.insertion_length/INSERTION_STEP) - math.floor(self.depth/INSERTION_STEP))
+        step = math.floor(self.depth/INSERTION_STEP)
+        H = min(self.H, self.ns - step)
         
         if (H > 0):         # Continue insertion steps
             u0 = np.array([self.cmd[0], self.cmd[2]])
@@ -254,8 +259,8 @@ class ControllerMPC3(Node):
             u = np.array([[self.stage[0], self.stage[2]]])
 
         # TO MAKE INSERTIONS WITHOUT COMPENSATION (DELETE AFTER)
-        # self.cmd[0] = self.stage_initial[0]
-        # self.cmd[2] = self.stage_initial[2]
+        self.cmd[0] = self.stage_initial[0]
+        self.cmd[2] = self.stage_initial[2]
     
         # Print values
         self.get_logger().info('Applying trajectory compensation... DO NOT insert the needle now\nTip: (%f, %f, %f) \
