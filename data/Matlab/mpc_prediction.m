@@ -6,9 +6,9 @@ global base_init;
 INSERTION_STEP = -5;
 
 %% Load Dataset
-trial = 01;
-folder = '2022-08-22';
-name = 'triali_';
+trial = 04;
+folder = '2022-08-29';
+name = 'trialj_';
 load(strcat(folder,'/',name,num2str(trial,'%2.2d'),'.mat'));
 
 %% Configure simulationb
@@ -37,7 +37,7 @@ fprintf('Final error X [mm] = %0.4f\n', abs(err_step(end,1)));
 fprintf('Final error Y [mm] = %0.4f\n', abs(err_step(end,2)));
 fprintf('Final error Z [mm] = %0.4f\n', abs(err_step(end,3)));
 
-if size(err_step,1) == 5
+if size(err_step,2) == 5
     fprintf('Final error angle_v [rad] = %0.4f\n', abs(err_step(end,4)));
     fprintf('Final error angle_h [rad] = %0.4f\n', abs(err_step(end,5)));
 end

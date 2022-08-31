@@ -85,32 +85,36 @@ end
 key = [1; diff(base(2,:))']/-5;
 
 % Load predictions from mat file
-load(strcat(folder,'/',name,num2str(trial,'%2.2d'),'_pred.mat'));
+matfile_name = strcat(folder,'/',name,num2str(trial,'%2.2d'),'_pred.mat');
+if isfile(matfile_name)
+    load(matfile_name);
 
-%% Configure simulationb
-N = size(u_pred,1);  % data size
+    %% Configure simulationb
+    N = size(u_pred,1);  % data size
 
-%% Loop key
-for i=1:N
-    ux = u_pred(i,:,1);
-    uz = u_pred(i,:,2);
-    up{i} = [ux' uz'];
-    
-    yx = y_pred(i,:,1);
-    yy = y_pred(i,:,2);
-    yz = y_pred(i,:,3);  
-    
-    if size(y_pred,3) == 3
-        yp{i} = [yx' yy' yz']; 
-    else
-        yv = y_pred(i,:,4);  
-        yh = y_pred(i,:,5);  
-        yp{i} = [yx' yy' yz' yv' yh'];         
+    %% Loop key
+    for i=1:N
+        ux = u_pred(i,:,1);
+        uz = u_pred(i,:,2);
+        up{i} = [ux' uz'];
+
+        yx = y_pred(i,:,1);
+        yy = y_pred(i,:,2);
+        yz = y_pred(i,:,3);  
+
+        if size(y_pred,3) == 3
+            yp{i} = [yx' yy' yz']; 
+        else
+            yv = y_pred(i,:,4);  
+            yh = y_pred(i,:,5);  
+            yp{i} = [yx' yy' yz' yv' yh'];         
+        end
+
     end
-    
+    save(strcat('Matlab/',folder,'/',name,num2str(trial,'%2.2d'),'.mat'), 't','aurora_tip', 'tip','base', 'X', 'Z', 'J', 'cmd', 'target', 'base_init', 'key', 'up', 'yp');
+else    
+    save(strcat('Matlab/',folder,'/',name,num2str(trial,'%2.2d'),'.mat'), 't','aurora_tip', 'tip','base', 'X', 'Z', 'J', 'cmd', 'target', 'base_init', 'key');
 end
-
-save(strcat('Matlab/',folder,'/',name,num2str(trial,'%2.2d'),'.mat'), 't','aurora_tip', 'tip','base', 'X', 'Z', 'J', 'cmd', 'target', 'base_init', 'key', 'up', 'yp');
 
 function [horizontal, vertical]= get_needle_angles(quat)
     q = quaternion(quat);

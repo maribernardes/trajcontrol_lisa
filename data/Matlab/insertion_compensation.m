@@ -7,10 +7,10 @@ global target;
 global T;
 
 %% Load Dataset
-trial = 01;
-folder = '2022-08-22';
-name = 'triali_';
-load(strcat(folder,'/',name,num2str(trial,'%2.2d'),'.mat'));
+trial = 00;
+folder = '2022-08-29';
+name = 'trialj_';
+load(strcat(folder,'/',name,num2str(trial,'%2.2d'),'b.mat'));
 
 %% Configure simulationb
 N = size(X,2);  % data size
@@ -79,6 +79,8 @@ fprintf('Final error X [mm] = %0.4f\n', abs(err(1,end)));
 fprintf('Final error Y [mm] = %0.4f\n', abs(err(2,end)));
 fprintf('Final error Z [mm] = %0.4f\n', abs(err(3,end)));
 fprintf('Final error 3D[mm] = %0.4f\n', sqrt(err(1,end)^2+err(2,end)^2+err(3,end)^2));
+fprintf('Final error 2D[mm] = %0.4f\n', sqrt(err(1,end)^2+err(3,end)^2));
+
 
 
 function plot_target(line)
