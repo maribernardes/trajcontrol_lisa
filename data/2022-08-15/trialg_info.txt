@@ -1,0 +1,12 @@
+** TRIAL WITH GELATINE #2 **
+Didn't like the results. Big errors in Z with MPC
+Think initial Jacobian is not appropriate
+
+Phantom: #2 Gelatine (130g + 650ml = 0.2g/ml) with silicone sheet skin
+Controller: MPC1
+
+00: no compensation 	/ ErrX=11.9, ErrZ=3.5
+00b:no compensation 	/ ErrX=10.6, ErrZ=3.04
+01: MPC1		/ ErrX=6.06, ErrZ=10.72 
+02: K=0.05		/ ErrX=7.10, ErrZ=0.4
+03: MPC1 with H=1	/ Not a very good approach

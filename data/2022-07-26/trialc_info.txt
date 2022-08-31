@@ -1,0 +1,9 @@
+** TRIAL INTERRUPTED BY PHANTOM USE IN CRYO **
+Trial after fixing J not being updated and sync control action after J update.
+
+Phantom: #1 Gelatine (125g + 500ml = 0.25g/ml) with silicone sheet skin
+Controller: Proportional
+
+00: no compensation
+01: K=0.05, safe limit=3mm
+

@@ -1,0 +1,12 @@
+** WOULD NOT RECOMMEND USING THIS TRIAL **
+Not compensating enough. Saturated too early
+Probably implementation errors
+
+Phantom: #1 Gelatine (125g + 500ml = 0.25g/ml) with silicone sheet skin
+Controller: Proportional
+
+00: no compensation
+00b: no compensation
+01: K=0.001, safe limit=3mm
+02: K=0.01, safe limit=3mm
+03: K=0.01, safe limit=6mm

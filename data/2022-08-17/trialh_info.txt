@@ -1,0 +1,9 @@
+** TRIAL WITH EDUCATED GUESS INITIAL J **
+
+Phantom: #2 Gelatine (130g + 650ml = 0.2g/ml) with silicone sheet skin
+Controller: MPC2
+
+01: MPC1		/ Jinit with big influence of depth
+02: MPC1		/ Adjusted Jnint
+03: MPC1 target	/ With target error min instead of trajectory = BAD result
+04: MPC1		/ Back to regular trajectory error minimization (at the border of skin)

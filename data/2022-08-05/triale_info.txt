@@ -1,0 +1,11 @@
+** TESTING MPC FOR IMPLEMENTATION ERRORS - DO NOT USE THIS TRIAL **
+Agar phantom would tear too much. Was not getting good pivoting (no controllability)
+Phantom recipient was jiggling (round bottom)
+Noticeable skin sliding (specially at phantom center)
+
+Phantom: #2 Agar (80g + 1500ml) with silicone sheet skin
+Controller: MPC1
+
+01: Missed last step (implementation error)
+02: Same as 01 (long stop)
+03: Fixed code. Runs ok. Bad results. Check source of problems

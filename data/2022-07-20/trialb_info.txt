@@ -1,0 +1,10 @@
+** INVALID TRIAL**
+Used a fixed handcoded Jacobian by mistake. Was not updating J
+
+Phantom: #1 Gelatine (125g + 500ml = 0.25g/ml) with silicone sheet skin
+Controller: Proportional
+
+01: K=0.1, safe limit=6mm / Wrong initial Jacobian
+02: K=0.05, safe limit=3mm
+03: K=0.1, safe limit=6mm
+04: K=0.05, safe limit=6mm

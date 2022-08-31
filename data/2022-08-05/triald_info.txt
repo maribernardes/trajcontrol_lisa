@@ -1,0 +1,20 @@
+** TRIAL WITH NEW AGAR PHANTOM **
+Results varied a lot between insertions
+Agar phantom would tear too much. Was not getting good pivoting (no controllability)
+Phantom recipient was jiggling (round bottom)
+Noticeable skin sliding (specially at phantom center)
+
+Phantom: #2 Agar (80g + 1500ml) with silicone sheet skin
+Controller: Proportional
+
+00 : no compensation
+00b: no compensation
+00c: no compensation
+00d: no compensation
+01: K=0.05, safe limit=6mm
+02: K=0.05, safe limit=8mm
+03: K=0.05, safe limit=8mm
+04: K=0.05, safe limit=10mm
+05: K=0.05, safe limit=10mm
+06: K=0.05, safe limit=10mm / Hit X limit of stage (0.0)
+07: K=0.05, safe limit=10mm
