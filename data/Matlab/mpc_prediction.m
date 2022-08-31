@@ -6,9 +6,9 @@ global base_init;
 INSERTION_STEP = -5;
 
 %% Load Dataset
-trial = 04;
-folder = '2022-08-17';
-name = 'trialh_';
+trial = 01;
+folder = '2022-08-22';
+name = 'triali_';
 load(strcat(folder,'/',name,num2str(trial,'%2.2d'),'.mat'));
 
 %% Configure simulationb
@@ -26,33 +26,39 @@ for i=1:ns
     Z_step(i,:) = Z(:,k);
     X_step(i,:) = X(:,k);
     cmd_step(i,:) = cmd(:, k+1);
+    if size(yp{1},2) == 3
+        err_step(i,:) = Z(1:3,k) - target;
+    else
+        err_step(i,:) = Z(1:5,k) - [target;0;0];
+    end
 end
 
+fprintf('Final error X [mm] = %0.4f\n', abs(err_step(end,1)));
+fprintf('Final error Y [mm] = %0.4f\n', abs(err_step(end,2)));
+fprintf('Final error Z [mm] = %0.4f\n', abs(err_step(end,3)));
+
+if size(err_step,1) == 5
+    fprintf('Final error angle_v [rad] = %0.4f\n', abs(err_step(end,4)));
+    fprintf('Final error angle_h [rad] = %0.4f\n', abs(err_step(end,5)));
+end
+fprintf('Final error 3D[mm] = %0.4f\n', sqrt(err_step(end,1)^2+err_step(end,2)^2+err_step(end,3)^2));
+fprintf('Final error 2D[mm] = %0.4f\n', sqrt(err_step(end,1)^2+err_step(end,3)^2));
+
 past_u = [X_step(1,1) X_step(1,3)];
+
 past_y = Z_step(1,1:3);
 
 future_u = [past_u; up{1}(1:N,:)];
-future_y = [past_y; yp{1}(1:N,:)];
+future_y = [past_y; yp{1}(1:N,1:3)];
 
 depth = [0:-5:-100];
 
 %% Loop prediction steps
 for i=1:N    
-%     i
-%     Jc_step{i}
-%     target
-%     Z_step(i,1:3)'
-%     if i==1
-%         delta_u = [up{i}(1,1);-5; up{i}(1,2)] - base_init
-%     else
-%         delta_u = [up{i}(1,1)-up{i-1}(1,1);-5; up{i}(1,2)-up{i-1}(1,2)]     
-%     end
-%     delta_tip = Jc_step{i}*delta_u        
     
-
     subplot(4,1,1);
     plot(depth(1:i), past_y(:,1), '.-m', depth(i:N+1), future_y(:,1), '.-b');
-    plot_target_X('--r');
+    plot_target_X('--k');
     title('X - Horizontal');
     ylabel('Tip X [mm]'); legend('executed','prediction',  'target');
     set(gca,'Xdir','reverse');
@@ -68,7 +74,7 @@ for i=1:N
     
     subplot(4,1,3);
     plot(depth(1:i), past_y(:,3), '.-m', depth(i:N+1), future_y(:,3), '.-b');
-    plot_target_Z('--r');
+    plot_target_Z('--k');
     title('Z - Vertical');
     ylabel('Tip Z [mm]'); legend('executed','prediction',  'target');
     set(gca,'Xdir','reverse');
@@ -83,7 +89,7 @@ for i=1:N
 
     if (i~=N)        
         future_u = [X_step(i+1,1), X_step(i+1,3); up{i+1}(1:N-i,:)];
-        future_y = [Z_step(i+1,1:3); yp{i+1}(1:N-i,:)];
+        future_y = [Z_step(i+1,1:3); yp{i+1}(1:N-i,1:3)];
     end
     past_u = [past_u; [X_step(i+1,1) X_step(i+1,3)]];
     past_y = [past_y; Z_step(i+1,1:3)];
@@ -94,7 +100,7 @@ end
 
 subplot(4,1,1);
 plot(depth, Z_step(:,1), '.-m');
-plot_target_X('--r');
+plot_target_X('--k');
 title('X - Horizontal');
 ylabel('Tip X [mm]'); legend('executed', 'target');
 set(gca,'Xdir','reverse');
@@ -110,7 +116,7 @@ xlim([-100 0]);
 
 subplot(4,1,3);
 plot(depth, Z_step(:,3), '.-m');
-plot_target_Z('--r');
+plot_target_Z('--k');
 title('Z - Vertical');
 ylabel('Tip Z [mm]'); legend('executed', 'target');
 set(gca,'Xdir','reverse');
@@ -122,7 +128,6 @@ plot_safe_limit_Z('k');
 xlabel('Depth [mm]'),ylabel('Base Z [mm]'); legend('executed', 'safe limit');
 set(gca,'Xdir','reverse');
 xlim([-100 0]);
-
 
 function plot_target(line)
     global target;

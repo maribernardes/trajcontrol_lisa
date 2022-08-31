@@ -1,9 +1,9 @@
 clear; close all; clc;
 
 %% Get .csv file into table T
-trial = 04;
-folder = '2022-08-17';
-name = 'trialh_';
+trial = 05;
+folder = '2022-08-29';
+name = 'trialj_';
 
 %% Load Dataset
 % Read data from table
@@ -99,7 +99,15 @@ for i=1:N
     yx = y_pred(i,:,1);
     yy = y_pred(i,:,2);
     yz = y_pred(i,:,3);  
-    yp{i} = [yx' yy' yz']; 
+    
+    if size(y_pred,3) == 3
+        yp{i} = [yx' yy' yz']; 
+    else
+        yv = y_pred(i,:,4);  
+        yh = y_pred(i,:,5);  
+        yp{i} = [yx' yy' yz' yv' yh'];         
+    end
+    
 end
 
 save(strcat('Matlab/',folder,'/',name,num2str(trial,'%2.2d'),'.mat'), 't','aurora_tip', 'tip','base', 'X', 'Z', 'J', 'cmd', 'target', 'base_init', 'key', 'up', 'yp');
