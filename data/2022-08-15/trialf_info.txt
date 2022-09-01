@@ -1,8 +1,8 @@
-** TRIAL WITH GELATINE #2 **
+** TRIAL WITH GELATINE PHANTOM #3 **
 Did 1-2 extra steps at the end to compensate y error.
 I think it is better to have fixed steps and ignore y error.
 
-Phantom: #2 Gelatine (130g + 650ml = 0.2g/ml) with silicone sheet skin
+Phantom: #3 Gelatine (130g + 650ml = 0.2g/ml) with silicone sheet skin
 Controller: MPC and Proportional
 
 00: no compensation 	

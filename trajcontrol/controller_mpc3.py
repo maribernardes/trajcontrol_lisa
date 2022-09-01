@@ -85,7 +85,7 @@ class ControllerMPC3(Node):
         if (self.stage_initial.size == 0):
             # Set stage initial position
             self.stage_initial = np.array([robot.position.x, robot.position.y, robot.position.z])
-            self.cmd = np.copy(self.stage_initial)
+            self.cmd = np.copy(self.stage_initial) + np.array([0, INSERTION_STEP, 0]) #First command is to make one push without moving the base
             self.get_logger().info('Stage initial: (%f, %f, %f) ' % (self.stage_initial[0], self.stage_initial[1], self.stage_initial[2]))
 
             # Control output limits

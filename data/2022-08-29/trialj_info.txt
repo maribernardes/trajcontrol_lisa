@@ -1,6 +1,6 @@
 ** TRIAL WITH DURAPORE 3M **
 
-Phantom: #2 Gelatine (130g + 650ml = 0.2g/ml) with DuraporeTM skin
+Phantom: #3 Gelatine (130g + 650ml = 0.2g/ml) with DuraporeTM skin
 Controller: MPC2
 
 00: middle	/ ErrX = 9.83, ErrZ = 2.16

@@ -1,6 +1,6 @@
 ** TRIAL WITH NEW MPC2 (ANGLES) **
 
-Phantom: #2 Gelatine (130g + 650ml = 0.2g/ml) with silicone sheet skin
+Phantom: #3 Gelatine (130g + 650ml = 0.2g/ml) with silicone sheet skin
 Controller: MPC2
 
 01: near window border (right) X+

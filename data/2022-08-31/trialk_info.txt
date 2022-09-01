@@ -1,0 +1,21 @@
+** TRIAL WITH PHANTOM #4 **
+
+Phantom: #4 Gelatine (85g + 650ml = 0.2g/ml) with Gaze skin
+Controller: MPC3 (angles with fixed sliding horizon of 3 steps)
+
+NO COMPENSATION:
+trialk_00a: near right border (X-)
+trialk_00b: near right border (X-), between 01 and 02
+trialk_00c: at the middle
+trialk_00d: near left border (X+), next to 04 and 05
+trialk_00e: near left border (X+), almost at the corner 
+trialk_00f: near left border (X+), almost at the corner but near surface
+trialk_00g: near left border (X+), between 06 and 00f, but at the bottom 
+
+WITH MPC3 COMPENSATION:
+trialk_01: near right border (X-), same point as 00a
+trialk_02: near right border (X-), more to the middle
+trialk_03: middle
+trialk_04: left (X+)
+trialk_05: left (X+), more to the middle than 04
+trialk_06: left (X+), more to the middle than 05

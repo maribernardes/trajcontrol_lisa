@@ -8,8 +8,8 @@ INSERTION_STEP = -5;
 %% Load Dataset
 trial = 01;
 extra = '';
-folder = '2022-08-29';
-name = 'trialj_';
+folder = '2022-08-31';
+name = 'trialk_';
 load(strcat(folder,'/',name,num2str(trial,'%2.2d'),extra,'.mat'));
 
 %% Configure simulationb
@@ -87,8 +87,8 @@ future_u = [past_u(2,:); up{1}];
 future_y = [past_y(2,:); yp{1}(:,1:3)];
 
 %% Loop prediction steps
-for i=2:(S+1)
-    H = S-i+2;
+for i=2:S    
+    H = min(S-i+1,size(up{i},1));
     subplot(4,1,1);
     plot(depth(1:i), past_y(:,1), '.-m', depth(i:H+i), future_y(:,1), '.-b');
     plot_target_X('--k');
@@ -120,9 +120,10 @@ for i=2:(S+1)
     set(gca,'Xdir','reverse');
     xlim([-100 0]);
 
-    if (H>1)
-        future_u = [X_step(i+1,1), X_step(i+1,3); up{i}(1:H-1,:)];
-        future_y = [Z_step(i+1,1:3); yp{i}(1:H-1,1:3)];
+    if (i~=S)
+        futH = min(S-i ,size(up{i},1));
+        future_u = [X_step(i+1,1), X_step(i+1,3); up{i}(1:futH,:)];
+        future_y = [Z_step(i+1,1:3); yp{i}(1:futH,1:3)];
     end
     past_u = [past_u; [X_step(i+1,1) X_step(i+1,3)]];
     past_y = [past_y; Z_step(i+1,1:3)];

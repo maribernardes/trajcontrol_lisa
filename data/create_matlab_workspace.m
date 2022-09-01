@@ -1,13 +1,14 @@
 clear; close all; clc;
 
 %% Get .csv file into table T
-trial = 05;
+trial = 04;
+extra = '';
 folder = '2022-08-29';
 name = 'trialj_';
 
 %% Load Dataset
 % Read data from table
-T = readtable(strcat(folder,'/',name,num2str(trial,'%2.2d'),'.csv'), 'HeaderLines',1);
+T = readtable(strcat(folder,'/',name,num2str(trial,'%2.2d'),extra,'.csv'), 'HeaderLines',1);
 
 % Define sample sizes
 i = find(T{:,3}, 1,'first');   % First sample (when "target" is published) => First SPACE key is hit
@@ -82,10 +83,10 @@ for i=1:k
 end
 
 % Indexes with key being hit
-key = [1; diff(base(2,:))']/-5;
+key = [-5; diff(base(2,:))']/-5;
 
 % Load predictions from mat file
-matfile_name = strcat(folder,'/',name,num2str(trial,'%2.2d'),'_pred.mat');
+matfile_name = strcat(folder,'/',name,num2str(trial,'%2.2d'),extra,'_pred.mat');
 if isfile(matfile_name)
     load(matfile_name);
 
@@ -111,9 +112,9 @@ if isfile(matfile_name)
         end
 
     end
-    save(strcat('Matlab/',folder,'/',name,num2str(trial,'%2.2d'),'.mat'), 't','aurora_tip', 'tip','base', 'X', 'Z', 'J', 'cmd', 'target', 'base_init', 'key', 'up', 'yp');
+    save(strcat('Matlab/',folder,'/',name,num2str(trial,'%2.2d'),extra,'.mat'), 't','aurora_tip', 'tip','base', 'X', 'Z', 'J', 'cmd', 'target', 'base_init', 'key', 'up', 'yp');
 else    
-    save(strcat('Matlab/',folder,'/',name,num2str(trial,'%2.2d'),'.mat'), 't','aurora_tip', 'tip','base', 'X', 'Z', 'J', 'cmd', 'target', 'base_init', 'key');
+    save(strcat('Matlab/',folder,'/',name,num2str(trial,'%2.2d'),extra,'.mat'), 't','aurora_tip', 'tip','base', 'X', 'Z', 'J', 'cmd', 'target', 'base_init', 'key');
 end
 
 function [horizontal, vertical]= get_needle_angles(quat)
