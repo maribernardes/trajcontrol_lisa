@@ -65,7 +65,7 @@ def generate_launch_description():
         executable = "controller_mpc3",
         parameters = [
             {"insertion_length": -100.0},
-            {"H": 3},
+            {"H": 8},
             {"filename": LaunchConfiguration('filename')}
             ]
     )   
