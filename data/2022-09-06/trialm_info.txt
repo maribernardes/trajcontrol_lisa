@@ -1,0 +1,21 @@
+** TRIAL WITH PHANTOM #4 **
+
+Phantom: #4 Gelatine (85g + 650ml = 0.2g/ml) with Gaze skin
+Controller: MPC3 (angles with fixed sliding horizon - different horizon sizes)
+
+NO COMPENSATION:
+trialm_00a
+trialm_00b
+trialm_00c
+
+WITH MPC3 COMPENSATION:
+trialm_01: H=5
+trialm_02: H=5
+trialm_03: H=5
+trialm_04: H=3
+trialm_05: H=3
+trialm_06: H=5
+trialm_07: H=10
+trialm_08: H=10
+trialm_09: H=5
+

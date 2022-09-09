@@ -1,0 +1,18 @@
+** TRIAL WITH PHANTOM #5 **
+Not good because we reached Z inferior limit when compensation was on
+
+Phantom: #5 Thin Gel wax + candle wax with Durapore 3M skin
+Controller: MPC3 (angles with fixed sliding horizon of 3 steps)
+
+NO COMPENSATION:
+triall_00a: without skin
+triall_00b: with durapore skin
+triall_00c: with durapore skin
+
+WITH MPC3 COMPENSATION:
+OBS: We reached the stage Z inferior limit (0 value)
+triall_01: LISA robot moved a little. Phantom also moved.
+triall_02: Holding the phantom down with hand pressure
+triall_03: Holding the phantom down with hand pressure
+trialh_04: Holding the phantom down with hand pressure
+

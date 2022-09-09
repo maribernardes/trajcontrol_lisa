@@ -6,16 +6,20 @@ global base_init;
 INSERTION_STEP = -5;
 
 %% Load Dataset
-trial = 05;
+trial = 06;
 extra = '';
-folder = '2022-09-09';
-name = 'trialo_';
+folder = '2022-08-31';
+name = 'trialk_';
 load(strcat(folder,'/',name,num2str(trial,'%2.2d'),extra,'.mat'));
 
 %% Configure simulationb
-S = size(up,2);  % data size
+N = size(up,2);  % data size
+n = 4;
+S = N-n;         % Do n steps less than experiment
 safe_limit = 6;
 base_init = base(:,1);
+
+target = target - [0; n*INSERTION_STEP; 0]; %Update target for new depth
 
 %% Loop key
 k_key = find(key); % Samples when key was pressed
@@ -34,16 +38,16 @@ for i=1:ns
     end
 end
 
-fprintf('Final error X [mm] = %0.4f\n', abs(err_step(end,1)));
-fprintf('Final error Y [mm] = %0.4f\n', abs(err_step(end,2)));
-fprintf('Final error Z [mm] = %0.4f\n', abs(err_step(end,3)));
+fprintf('Final error X [mm] = %0.4f\n', abs(err_step(S+1,1)));
+fprintf('Final error Y [mm] = %0.4f\n', abs(err_step(S+1,2)));
+fprintf('Final error Z [mm] = %0.4f\n', abs(err_step(S+1,3)));
 
 if size(err_step,2) == 5
-    fprintf('Final error angle_v [rad] = %0.4f\n', abs(err_step(end,4)));
-    fprintf('Final error angle_h [rad] = %0.4f\n', abs(err_step(end,5)));
+    fprintf('Final error angle_v [rad] = %0.4f\n', abs(err_step(S+1,4)));
+    fprintf('Final error angle_h [rad] = %0.4f\n', abs(err_step(S+1,5)));
 end
-fprintf('Final error 3D[mm] = %0.4f\n', sqrt(err_step(end,1)^2+err_step(end,2)^2+err_step(end,3)^2));
-fprintf('Final error 2D[mm] = %0.4f\n', sqrt(err_step(end,1)^2+err_step(end,3)^2));
+fprintf('Final error 3D[mm] = %0.4f\n', sqrt(err_step(S+1,1)^2+err_step(S+1,2)^2+err_step(S+1,3)^2));
+fprintf('Final error 2D[mm] = %0.4f\n', sqrt(err_step(S+1,1)^2+err_step(S+1,3)^2));
 
 depth = [0:-5:-100];
 
@@ -87,7 +91,7 @@ future_u = [past_u(2,:); up{1}];
 future_y = [past_y(2,:); yp{1}(:,1:3)];
 
 %% Loop prediction steps
-for i=2:S    
+for i=2:S
     H = min(S-i+1,size(up{i},1));
     subplot(4,1,1);
     plot(depth(1:i), past_y(:,1), '.-m', depth(i:H+i), future_y(:,1), '.-b');
@@ -133,7 +137,7 @@ for i=2:S
 end
 
 subplot(4,1,1);
-plot(depth, Z_step(:,1), '.-m');
+plot(depth(1:S+1), Z_step(1:S+1,1), '.-m');
 plot_target_X('--k');
 title('X - Horizontal');
 ylabel('Tip X [mm]'); legend('executed', 'target');
@@ -141,14 +145,14 @@ set(gca,'Xdir','reverse');
 xlim([-100 0]);
 
 subplot(4,1,2);
-plot(depth, X_step(:,1), '.-m');
+plot(depth(1:S+1), X_step(1:S+1,1), '.-m');
 plot_safe_limit_X('k');
 ylabel('Base X [mm]'); legend('executed', 'safe limit');
 set(gca,'Xdir','reverse');
 xlim([-100 0]);
 
 subplot(4,1,3);
-plot(depth, Z_step(:,3), '.-m');
+plot(depth(1:S+1), Z_step(1:S+1,3), '.-m');
 plot_target_Z('--k');
 title('Z - Vertical');
 ylabel('Tip Z [mm]'); legend('executed', 'target');
@@ -156,7 +160,7 @@ set(gca,'Xdir','reverse');
 xlim([-100 0]);
 
 subplot(4,1,4);
-plot(depth, X_step(:,3), '.-m');
+plot(depth(1:S+1), X_step(1:S+1,3), '.-m');
 plot_safe_limit_Z('k');
 xlabel('Depth [mm]'),ylabel('Base Z [mm]'); legend('executed', 'safe limit');
 set(gca,'Xdir','reverse');
