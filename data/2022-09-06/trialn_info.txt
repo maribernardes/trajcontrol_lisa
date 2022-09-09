@@ -1,0 +1,11 @@
+** TRIAL WITH PHANTOM #4 BACK PART **
+
+Phantom: #4 Gelatine (85g + 650ml = 0.2g/ml) with Durapore skin (back part)
+Controller: MPC3 (angles with fixed sliding horizon - changing H sizes)
+
+WITH MPC3 COMPENSATION:
+trialn_01: H=3
+trialn_02: H=5
+trialn_03: H=5
+trialn_04: H=8
+
