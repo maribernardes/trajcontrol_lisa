@@ -71,7 +71,7 @@ class ControllerMPC3(Node):
         self.insertion_length = self.get_parameter('insertion_length').get_parameter_value().double_value
         self.H = self.get_parameter('H').get_parameter_value().integer_value
         self.ns = math.floor(self.insertion_length/INSERTION_STEP)
-        self.get_logger().info('MPC 3 horizon for this trial: H = %f \n Total insertion: %i steps' %(self.H, self.ns))
+        self.get_logger().info('MPC 3 horizon for this trial: H = %i \n Total insertion: %i steps' %(self.H, self.ns))
 
         # Prediction (save to mat file)
         self.u_pred = np.zeros((self.ns,self.H,2))
@@ -150,10 +150,13 @@ class ControllerMPC3(Node):
             # Objective 1: Trajectory error (x/z position and angles)
             tg_xz = np.tile([self.target[0],self.target[2],self.target[3],self.target[4]],(H,1))    # Build target without depth and with angles
             y_hat_xz = np.array([y_hat[:,0],y_hat[:,2],y_hat[:,3],y_hat[:,4]]).T                    # Build tip prediction without depth
-            kerr = np.array([1.0, 1.0, 0.2, 0.2])           # Balance weight of errors in x/z [mm] and angles [rad] (kx=kz=1, kav=kah=0.2)
-            err2 = np.dot(np.power(y_hat_xz-tg_xz,2), kerr) # Calculate err2 for each step (err2 = kx*Xerr^2 + kz*Zerr^e + kav*AVerr^2 + kah*AHerr^2)
-            kstep = np.arange(H,0,-1)                       # Decreasing weights for different steps (more importance to close future) 
-            obj1 = np.matmul(kstep,err2)                    # Weights each step
+            # kerr = np.array([1.0, 1.0, 0.2, 0.2])           # Balance weight of errors in x/z [mm] and angles [rad] (kx=kz=1, kav=kah=0.2)
+            # err2 = np.dot(np.power(y_hat_xz-tg_xz,2), kerr) # Calculate err2 for each step (err2 = kx*Xerr^2 + kz*Zerr^e + kav*AVerr^2 + kah*AHerr^2)
+            # kstep = np.arange(H,0,-1)                       # Decreasing weights for different steps (more importance to close future) 
+            # obj1 = np.matmul(kstep,err2)                    # Weights each step
+            
+            err2 = np.dot(np.power(y_hat_xz-tg_xz,2), np.array([1.0, 1.0, 1.5, 1.5]))
+            obj1 = np.matmul(np.ones(H),err2)
 
             ##This considers only final step error
             # tg_xz = np.array([self.target[0],self.target[2]])   # Build target without depth

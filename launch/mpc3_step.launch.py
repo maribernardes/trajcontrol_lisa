@@ -65,7 +65,7 @@ def generate_launch_description():
         executable = "controller_mpc3",
         parameters = [
             {"insertion_length": -100.0},
-            {"H": 8},
+            {"H": LaunchConfiguration('H')},
             {"filename": LaunchConfiguration('filename')}
             ]
     )   
@@ -84,6 +84,12 @@ def generate_launch_description():
             description = "File name to save .csv file with experimental data"
         ),
         actions.LogInfo(msg = ["filename: ", LaunchConfiguration('filename')]),
+        DeclareLaunchArgument(
+            "H",
+            default_value = "5",
+            description = "MPC horizon size"
+        ),
+        actions.LogInfo(msg = ["H: ", LaunchConfiguration('H')]),
         robot,
         aurora,
         sensor,
