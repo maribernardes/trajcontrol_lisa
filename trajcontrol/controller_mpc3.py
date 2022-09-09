@@ -155,7 +155,7 @@ class ControllerMPC3(Node):
             # kstep = np.arange(H,0,-1)                       # Decreasing weights for different steps (more importance to close future) 
             # obj1 = np.matmul(kstep,err2)                    # Weights each step
             
-            err2 = np.dot(np.power(y_hat_xz-tg_xz,2), np.array([1.0, 1.0, 1.5, 1.5]))
+            err2 = np.dot(np.power(y_hat_xz-tg_xz,2), np.array([1.0, 1.0, 2.0, 2.0]))
             obj1 = np.matmul(np.ones(H),err2)
 
             ##This considers only final step error
