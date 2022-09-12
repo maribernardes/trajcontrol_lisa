@@ -265,8 +265,8 @@ class ControllerMPC3(Node):
             u = np.array([[self.stage[0], self.stage[2]]])
 
         # TO MAKE INSERTIONS WITHOUT COMPENSATION (DELETE AFTER)
-        # self.cmd[0] = self.stage_initial[0]
-        # self.cmd[2] = self.stage_initial[2]
+        self.cmd[0] = self.stage_initial[0]
+        self.cmd[2] = self.stage_initial[2]
     
         # Print values
         self.get_logger().info('Applying trajectory compensation... DO NOT insert the needle now\nTip: (%f, %f, %f) \
