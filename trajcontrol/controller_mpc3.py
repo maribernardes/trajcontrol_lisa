@@ -155,7 +155,7 @@ class ControllerMPC3(Node):
             # kstep = np.arange(H,0,-1)                       # Decreasing weights for different steps (more importance to close future) 
             # obj1 = np.matmul(kstep,err2)                    # Weights each step
             
-            err2 = np.dot(np.power(y_hat_xz-tg_xz,2), np.array([1.0, 1.0, 3.0, 3.0]))
+            err2 = np.dot(np.power(y_hat_xz-tg_xz,2), np.array([1.0, 1.0, 3.5, 3.5]))
             obj1 = np.matmul(np.ones(H),err2)
 
             ##This considers only final step error
@@ -264,9 +264,9 @@ class ControllerMPC3(Node):
             self.cmd[2] = self.stage[2]
             u = np.array([[self.stage[0], self.stage[2]]])
 
-        # TO MAKE INSERTIONS WITHOUT COMPENSATION (DELETE AFTER)
-        self.cmd[0] = self.stage_initial[0]
-        self.cmd[2] = self.stage_initial[2]
+        # # TO MAKE INSERTIONS WITHOUT COMPENSATION (DELETE AFTER)
+        # self.cmd[0] = self.stage_initial[0]
+        # self.cmd[2] = self.stage_initial[2]
     
         # Print values
         self.get_logger().info('Applying trajectory compensation... DO NOT insert the needle now\nTip: (%f, %f, %f) \
