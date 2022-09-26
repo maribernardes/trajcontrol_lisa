@@ -1,0 +1,12 @@
+** NEW GEL PHANTOM - TRIAL WITH PHANTOM #6 **
+
+Phantom: #6 Gel wax + candle wax with 2 layers of gaze for skin
+Controller: MPC3 (angles with fixed sliding horizon of 5 steps)
+
+NO COMPENSATION:
+triall_00a: at very bottom. Left window border X+
+triall_00b: at very bottom. Next to insertion 00a, going to center
+triall_00c: at very bottom. Next to insertion 00b, going to center
+triall_00d: at very bottom. Next to insertion 00c, going to center
+triall_00e: at very bottom. Next to insertion 00d, going to center
+

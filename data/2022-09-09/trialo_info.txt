@@ -1,0 +1,22 @@
+** CHECK ANGLE WEIGHT - TRIAL WITH PHANTOM #4 BACK PART **
+OBS: Noticed that the acrylic base for the setup is deforming.
+Started holding it down since trialo_05
+
+Phantom: #4 Gelatine (85g + 650ml = 0.2g/ml) with Durapore skin (back part)
+Controller: MPC3 (angles with fixed H=5 - changing weight for angles wang)
+
+WITH MPC3 COMPENSATION:
+wdistance = 1.0 for all trials.
+trialo_01: wang = 0.2
+trialo_02: wang = 1.5 (touched window bottom with needle guide)
+trialo_03: wang = 1.5
+trialo_04: wang = 1.5
+trialo_05: wang = 1.5
+trialo_06: wang = 2.0
+trialo_07: wang = 2.0
+trialo_08: wang = 0.0
+trialo_09: wang = 0.0 (near container wall left X+)
+trialo_10: wang = 2.0 (near container wall left X+)
+
+
+

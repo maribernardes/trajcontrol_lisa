@@ -6,10 +6,10 @@ global base_init;
 INSERTION_STEP = -5;
 
 %% Load Dataset
-trial = 05;
+trial = 16;
 extra = '';
-folder = '2022-09-09';
-name = 'trialo_';
+folder = '2022-09-20';
+name = 'trialp_';
 load(strcat(folder,'/',name,num2str(trial,'%2.2d'),extra,'.mat'));
 
 %% Configure simulationb
