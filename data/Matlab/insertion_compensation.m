@@ -7,10 +7,10 @@ global target;
 global T;
 
 %% Load Dataset
-trial = 16;
+trial = 01;
 extra = '';
-folder = '2022-09-20';
-name = 'trialp_';
+folder = 'tests';
+name = 'window_top_right_';
 load(strcat(folder,'/',name,num2str(trial,'%2.2d'),extra,'.mat'));
 
 %% Configure simulationb
