@@ -69,6 +69,7 @@ class SaveFile(Node):
             'J40', 'J41', 'J42', 'J sec', 'J nanosec', \
             'Control x', 'Control y', 'Control z', 'Control sec', 'Control nanosec', \
             'Robot x', 'Robot z', 'Robot sec', 'Robot nanosec'
+            
         ]
         
         with open(self.filename, 'w', newline='', encoding='UTF8') as f: # open the file in the write mode

@@ -60,10 +60,10 @@ class ControllerSequence(Node):
         #                         [0, 0, 0, 0, 0, 0, 0]])   
 
         # Stored values
-        self.stage_initial = np.empty(shape=[2,0])  # Stage home position
-        self.stage = np.empty(shape=[2,0])          # Current stage pose
-        self.tip = np.empty(shape=[7,0])            # Current needle tip pose
-        self.cmd = np.empty((2,0))                  # Control output to the robot stage
+        self.stage_initial = np.empty(shape=[0,2])  # Stage home position
+        self.stage = np.empty(shape=[0,2])          # Current stage pose
+        self.tip = np.empty(shape=[0,7])            # Current needle tip x and z (from aurora)
+        self.cmd = np.empty((0,2))                  # Control output to the robot stage
         self.robot_idle = False                     # Stage status
         self.next_target = 0                        # Next target number
         self.current_target = None                  # Sent target number
@@ -83,8 +83,8 @@ class ControllerSequence(Node):
     # Get current tip pose
     def tip_callback(self, msg):
         tip = msg.pose
-        self.tip = np.array([[tip.position.x, tip.position.y, tip.position.z, \
-                                tip.orientation.w, tip.orientation.x, tip.orientation.y, tip.orientation.z]]).T    
+        self.tip = np.array([tip.position.x, tip.position.y, tip.position.z, \
+                                tip.orientation.w, tip.orientation.x, tip.orientation.y, tip.orientation.z])    
 
     # Timer to robot control
     def timer_control_robot_callback(self):
