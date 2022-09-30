@@ -1,7 +1,7 @@
 clear; close all; clc;
 
 %% Get .csv file into table T
-trial = 100;
+trial = 00;
 extra = '';
 folder = 'aurora';
 name = 'depth_';
@@ -63,7 +63,8 @@ target = T{i,3:5}';
 % Base initial position
 base_init = T{i,40:42}';
 % Stage
-stage = 1000*T{i:j,71:72}';
+stage = T{i:j,68:70}';
+stage_init = T{i,68:70}';
 
 %% Iterate FIX THIS
 [~, initcmd] = find(cmd, 1,'first');
@@ -81,7 +82,7 @@ for i=1:k
     
     [horiz, vert]= get_needle_angles(qTip(i,:));
     Z(:,i) = [Tip(i,:), horiz, vert];
-    X(:,i) = Base(i,1:3)';
+    X(:,i) = stage(i,1:3)';
     
     J{i} = [J1(i,:); J2(i,:); J3(i,:); J4(i,:); J5(i,:)];
 end
@@ -116,9 +117,9 @@ if isfile(matfile_name)
         end
 
     end
-    save(strcat('Matlab/',folder,'/',name,num2str(trial,'%2.2d'),extra,'.mat'), 't','aurora_tip', 'tip','base', 'X', 'Z', 'J', 'cmd', 'target', 'base_init', 'stage', 'key', 'up', 'yp');
+    save(strcat('Matlab/',folder,'/',name,num2str(trial,'%2.2d'),extra,'.mat'), 't','aurora_tip', 'tip','base', 'X', 'Z', 'J', 'cmd', 'target', 'base_init', 'key', 'up', 'yp');
 else    
-    save(strcat('Matlab/',folder,'/',name,num2str(trial,'%2.2d'),extra,'.mat'), 't','aurora_tip', 'tip','base', 'X', 'Z', 'J', 'cmd', 'target', 'base_init', 'stage', 'key');
+    save(strcat('Matlab/',folder,'/',name,num2str(trial,'%2.2d'),extra,'.mat'), 't','aurora_tip', 'tip','base', 'X', 'Z', 'J', 'cmd', 'target', 'base_init', 'key');
 end
 
 function [horizontal, vertical]= get_needle_angles(quat)
