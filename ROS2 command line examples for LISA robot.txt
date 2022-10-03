@@ -22,12 +22,17 @@ ________________________________________________________________________________
 3) Send commands (home, zero, ABORT, and any direct command to Newmark controller)
 ros2 service call /stage/controller/command stage_control_interfaces/srv/ControllerCommand "command: home"
 
+ros2 service call /stage/controller/global_command stage_control_interfaces/srv/ControllerCommand
+"command: PX=-0.025"
+
 _______________________________________________________________________________________
 4) Registration procedure
 	a) Launch PlusServer
 sudo /opt/PlusBuild-bin/bin/./PlusServerLauncher
 	b) Launch registration
 ros2 launch trajcontrol registration.launch.py
+
+OBS: two files are generated at the "files" folder: registration.csv and registration_points.csv
 _______________________________________________________________________________________
 5) Estimate initial Jacobian procedure
 	a) Launch PlusServer

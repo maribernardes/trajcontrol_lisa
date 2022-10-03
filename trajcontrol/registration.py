@@ -13,7 +13,9 @@ from rclpy.node import Node
 from ros2_igtl_bridge.msg import Transform
 from numpy import asarray, savetxt, loadtxt
 
-BUFF = 500  #Size of sensor buffer
+INIT_POINT_X = -25  #Initial robot X position at entry point
+INIT_POINT_Z = 15   #Initial robot Z position at entry point
+BUFF = 500          #Size of sensor buffer
 
 class Registration(Node):
 
@@ -110,7 +112,7 @@ class Registration(Node):
             # Send robot back to home position
             self.get_logger().info('Returning robot to home position... %s' %(self.transform))
             self.robot_idle = False
-            self.send_cmd(0.0, 0.0)
+            self.send_cmd(INIT_POINT_X, INIT_POINT_Z)
 
     def get_next_point(self):
         # Robot finished moving and sensor buffer already full
