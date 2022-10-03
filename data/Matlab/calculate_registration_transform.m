@@ -6,17 +6,18 @@
 % typically n>3
 %
 % Mili Shah
-% July 2014
+% July 201402
 clear all
 close all 
 clc
 
 %% Get .csv file into table T
 % Filename
-name = 'registration_points_all';
+folder = 'New registration';
+name = 'registration_points_C';
 
 % Read data from table
-T = readtable(strcat(name,'.csv'), 'HeaderLines',0);
+T = readtable(strcat('../../files/', folder,'/', name,'.csv'), 'HeaderLines',0);
 
 %% Extract values from table
 n = width(T);                   
@@ -44,6 +45,14 @@ R = (q(1)^2-q(2:4)'*q(2:4))*eye(3) + 2*q(2:4)*q(2:4)'+2*q(1)*[0 -q(4) q(3); q(3)
 t = Bc - R*Ac;
 regist_tf = [t;q];
 csvwrite('registration_matlab.csv',regist_tf)
+
+q3dslicer = [0.7242; 0.6889; -0.0070; -0.0282];
+% q3dslicer = [0.7241; 0.6891; -0.0070; -0.0279];
+t3dslicer = [-113.45; -257.45; 11.02];
+% t3dslicer = [-114.67; -261.34; 10.69];
+
+t = t3dslicer;
+q = q3dslicer;
 
 qr = quaternion(q(1), q(2), q(3), q(4));
 qt = quaternion(0, t(1), t(2), t(3));
@@ -75,7 +84,7 @@ legend({'robot','aurora'})
 axis equal
 
 figure (2);
-plot3(B_orig(1,:), B_orig(2,:), B_orig(3,:), 'b');
+plot3(B_orig(1,:), B_orig(2,:), B_orig(3,:), 'o-b');
 hold on;
 xlabel('X'); 
 ylabel('Y');
@@ -85,7 +94,7 @@ legend({'robot','aurora to robot'})
 axis equal
 
 figure(3);
-plot3(A_orig(1,:), A_orig(2,:), A_orig(3,:), 'r');
+plot3(A_orig(1,:), A_orig(2,:), A_orig(3,:), 'o-r');
 hold on;
 xlabel('X'); 
 ylabel('Y');
