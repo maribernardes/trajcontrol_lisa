@@ -14,7 +14,7 @@ clc
 %% Get .csv file into table T
 % Filename
 folder = 'New registration';
-name = 'registration_points_C';
+name = 'registration_points_all';
 
 % Read data from table
 T = readtable(strcat('../../files/', folder,'/', name,'.csv'), 'HeaderLines',0);
@@ -43,16 +43,36 @@ q = u(:,ind);
 R = (q(1)^2-q(2:4)'*q(2:4))*eye(3) + 2*q(2:4)*q(2:4)'+2*q(1)*[0 -q(4) q(3); q(3) 0 -q(2); -q(3) q(2) 0];
 %Calculate Optimal Translation
 t = Bc - R*Ac;
-regist_tf = [t;q];
-csvwrite('registration_matlab.csv',regist_tf)
 
-q3dslicer = [0.7242; 0.6889; -0.0070; -0.0282];
+% % Pedro - A (similarity)
 % q3dslicer = [0.7241; 0.6891; -0.0070; -0.0279];
-t3dslicer = [-113.45; -257.45; 11.02];
 % t3dslicer = [-114.67; -261.34; 10.69];
+
+% % Mariana - B and C (similarity)
+% rotm = [1.02482 0.0146421 -0.0163364; -0.0168445 0.0361643 -1.02428; -0.0140546 1.02431 0.0363966];
+% q3dslicer = [0.7195; 0.6944; -0.0008; -0.0107];
+% t3dslicer = [-110.998; -265.685; 5.59876];
+
+% % Mariana - B and C (rigidity)
+% rotm = [0.999771 0.0142842 -0.0159371; -0.0164328 0.0352804 -0.999242; -0.0137111 0.999275 0.035507];
+% q3dslicer =  [0.7195; 0.6944; -0.0008; -0.0107];
+% t3dslicer = [-108.896; -259.191; 6.31788];
+
+% Mariana - B,C,D,E (rigidity)
+rotm = [0.999769 0.0146047 -0.0157977; -0.0162962 0.0346672 -0.999266; -0.0140463 0.999292 0.0348972];
+q3dslicer =  [0.7193; 0.6947; -0.0006; -0.0107];
+t3dslicer = [-108.842; -259.158; 6.2481];
+
+% % Pedro - A (rigid)
+% q3dslicer = [0.7242; 0.6889; -0.0070; -0.0282];
+% t3dslicer = [-113.45; -257.45; 11.02];
 
 t = t3dslicer;
 q = q3dslicer;
+
+new_regist_tf = [t;q];
+csvwrite(strcat('../../files/', folder,'/registration_matlab.csv'),new_regist_tf)
+
 
 qr = quaternion(q(1), q(2), q(3), q(4));
 qt = quaternion(0, t(1), t(2), t(3));
