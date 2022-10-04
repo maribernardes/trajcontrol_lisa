@@ -28,6 +28,7 @@ setup(
             'keypress = trajcontrol.keypress:main',
             'sensor_processing = trajcontrol.sensor_processing:main',
             'estimator = trajcontrol.estimator:main',
+            'controller_init = trajcontrol.controller_init:main',
             'controller_manual = trajcontrol.controller_manual:main',
             'controller_sequence = trajcontrol.controller_sequence:main',
             'controller_rand = trajcontrol.controller_rand:main',

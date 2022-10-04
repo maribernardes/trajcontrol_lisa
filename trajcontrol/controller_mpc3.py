@@ -29,7 +29,7 @@ class ControllerMPC3(Node):
 
         #Declare node parameters
         self.declare_parameter('insertion_length', -100.0) #Insertion length parameter
-        self.declare_parameter('H', 5) #Insertion length parameter
+        self.declare_parameter('H', 4) #Insertion length parameter
         self.declare_parameter('filename', 'my_data') #Name of file where data values are saved
         self.filename = os.path.join(os.getcwd(),'src','trajcontrol','data',self.get_parameter('filename').get_parameter_value().string_value + '_pred.mat') #String with full path to file
 

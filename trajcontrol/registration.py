@@ -14,7 +14,7 @@ from ros2_igtl_bridge.msg import Transform
 from numpy import asarray, savetxt, loadtxt
 
 INIT_POINT_X = -25  #Initial robot X position at entry point
-INIT_POINT_Z = 15   #Initial robot Z position at entry point
+INIT_POINT_Z = 35   #Initial robot Z position at entry point
 BUFF = 500          #Size of sensor buffer
 
 class Registration(Node):
