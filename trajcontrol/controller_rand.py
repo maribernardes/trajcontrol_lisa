@@ -43,12 +43,14 @@ class ControllerRand(Node):
         self.depth = 0.0
         self.robot_idle = True                      # Robot free to new command
         self.insertion_length = self.get_parameter('insertion_length').get_parameter_value().double_value
-   
+        self.step = 0
+
     # A keyboard hotkey was pressed 
     def keyboard_callback(self, msg):
         # Check if experiment is ready to begin (all topics received)
         # Only takes new inputs if robot finished previous action (robot IDLE)
         if (msg.data == 32) and (self.robot_idle == True) and (self.stage_initial.size != 0): # Hit SPACE and robot is free
+            self.step = self.step + 1
             self.send_cmd()         # Calls routine to calculate and send new control signal
 
     # Get current base pose
@@ -58,13 +60,20 @@ class ControllerRand(Node):
         self.depth = robot.position.y
         if (self.stage_initial.size == 0):
             self.stage_initial = np.array([robot.position.x, robot.position.y, robot.position.z])
-            self.get_logger().info('Stage initial: (%f, %f, %f) ' % (self.stage_initial[0], self.stage_initial[1], self.stage_initial[2]))
+            self.get_logger().info('Stage initial: [%f, %f, %f] ' % (self.stage_initial[0], self.stage_initial[1], self.stage_initial[2]))
 
     # Send MoveStage action to robot
     def send_cmd(self):
-        # Calculate control output
-        new_rand = np.random.uniform(-SAFE_LIMIT, SAFE_LIMIT, 3)
-        self.cmd = self.stage_initial + new_rand
+        # # Generate random control output
+        # new_rand = np.random.uniform(-SAFE_LIMIT, SAFE_LIMIT, 3)
+        # new_rand[1] = self.step*INSERTION_STEP
+        # self.cmd = self.stage_initial + new_rand
+
+        # Generate pre-defined control output
+        P = np.array([[5, -5, -5, -5], #deltaX sequence
+                      [5, 5, -10, -5]]) #deltaZ sequence
+        self.cmd = self.stage_initial + np.array([P[0,self.step], self.step*INSERTION_STEP, P[2,self.step]])
+        self.get_logger().info('Step #%i: [%f, %f, %f] ' % (self.step, self.cmd[0], self.cmd[1], self.cmd[2]))
 
         # Test for stage limits
         self.cmd[0] = min(self.cmd[0], 0.0)
