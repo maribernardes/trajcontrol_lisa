@@ -9,8 +9,8 @@ from geometry_msgs.msg import PoseStamped, PointStamped
 from stage_control_interfaces.action import MoveStage
 from trajcontrol.sensor_processing import INSERTION_STEP
 
-DEPTH_MARGIN = 1.8      # Final insertion length margin [mm]
-SAFE_LIMIT = 4.0        # Maximum control output delta from stage initial position [mm] (in each direction)
+SAFE_LIMIT = 6.0        # Maximum control output delta from stage initial position [mm] (in each direction)
+DEPTH_MARGIN = 1.5      # Final insertion length margin [mm]
 
 class ControllerRand(Node):
 
@@ -70,10 +70,17 @@ class ControllerRand(Node):
         # self.cmd = self.stage_initial + new_rand
 
         # Generate pre-defined control output
-        P = np.array([[5, -5, -5, -5], #deltaX sequence
-                      [5, 5, -10, -5]]) #deltaZ sequence
-        self.cmd = self.stage_initial + np.array([P[0,self.step], self.step*INSERTION_STEP, P[2,self.step]])
+        P = np.array([[2, -2, -3, -2], #deltaX sequence
+                      [2, 2, -3, -2]]) #deltaZ sequence
+        self.cmd = self.stage_initial + np.array([P[0,self.step-1], self.step*INSERTION_STEP, P[1,self.step-1]])
         self.get_logger().info('Step #%i: [%f, %f, %f] ' % (self.step, self.cmd[0], self.cmd[1], self.cmd[2]))
+
+        ## Keeping this just to be on the safe side
+        # Limit control output to maximum SAFE_LIMIT[mm] around entry stage_initial
+        self.cmd[0] = min(self.cmd[0], self.stage_initial[0]+SAFE_LIMIT)
+        self.cmd[0] = max(self.cmd[0], self.stage_initial[0]-SAFE_LIMIT)
+        self.cmd[2] = min(self.cmd[2], self.stage_initial[2]+SAFE_LIMIT)
+        self.cmd[2] = max(self.cmd[2], self.stage_initial[2]-SAFE_LIMIT)
 
         # Test for stage limits
         self.cmd[0] = min(self.cmd[0], 0.0)
