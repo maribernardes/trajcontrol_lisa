@@ -8,10 +8,10 @@ clc;
 %% Select if MPC3 algorithm (with angles) or previous version
 
 %% Select Dataset
-trial = 1:10;
-extra = 'a':'g';
-folder = '2022-10-07';
-name = 'trials_';
+trial = 1:3;
+extra = 'j':'n';
+folder = 'jacobian';
+name = 'test_J_geom_';
 open_loop = false;  %True = Open-loop insertion (no compensation): trial?-00?
 mpc3 = true;        %True = Used MPC3 (with angles)
 
@@ -29,12 +29,8 @@ else
 end
 [err_x, err_y, err_z, err_2d, err_3d] = deal(zeros(N,1));   
 
-
 %% Get error for each trial
 for j=1:N
-    if j==7
-        mariana=1;
-    end
     %% Load data
     if open_loop == true
         load(strcat(folder,'/',name,num2str(0,'%2.2d'),extra(j),'.mat'));
