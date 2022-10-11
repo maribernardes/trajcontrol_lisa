@@ -3,13 +3,16 @@ global target;
 global safe_limit;
 global base_init;
 
+%% Plot step-by-step prediction and past positions of needle tip
+%% Plot also the calculated and performed control outputs for each step
+
 INSERTION_STEP = -5;
 
 %% Load Dataset
-trial = 11;
+trial = 03;
 extra = '';
-folder = '2022-10-04';
-name = 'trialr_';
+folder = '2022-10-07';
+name = 'trials_';
 load(strcat(folder,'/',name,num2str(trial,'%2.2d'),extra,'.mat'));
 
 %% Configure simulationb

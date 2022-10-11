@@ -7,10 +7,10 @@ global target;
 global T;
 
 %% Load Dataset
-trial = 01;
+trial = 03;
 extra = '';
-folder = 'tests';
-name = 'window_top_right_';
+folder = '2022-10-07';
+name = 'trials_';
 load(strcat(folder,'/',name,num2str(trial,'%2.2d'),extra,'.mat'));
 
 %% Configure simulationb
@@ -22,21 +22,23 @@ base_init = base(:,1);
 k_key = find(key); % Samples when key was pressed
 Nk = length(k_key);
 T = zeros(1,Nk);
+err = zeros(3,Nk);
 for i=1:Nk
     k = k_key(i);   %sample
     T(:,i) = t(k);
+    err(:,i) = tip(1:3,i) - target;
 end
 
 %% Loop all measurements
-err = zeros(3,N);
+err_all = zeros(3,N);
 for i=1:N
-    err(:,i) = tip(1:3,i) - target; 
+    err_all(:,i) = tip(1:3,i) - target; 
 end
 
 
 %% Plot control error to target
 figure(1);
-plot(t, err(1,:),'.-', t, err(3,:),'.-')
+plot(t, err_all(1,:),'.-', t, err_all(3,:),'.-')
 hold on;
 plot_key('--g');
 title('Error to target'),xlabel('time [s]'),ylabel('err [mm]'),  legend('X', 'Z')

@@ -1,24 +1,45 @@
 clear all;
 close all;
 clc;
-% %% Load Dataset
-% trial = 0;
-% extra = 'g';
-% folder = '2022-10-04';
-% name = 'trialr_';
-% load(strcat(folder,'/',name,num2str(trial,'%2.2d'),extra,'.mat'));
-% 
-% target
 
-pos_z = [23.9700000000000;30.3474000000000;35.1923000000000;18.7643000000000;37.7225000000000;33.1670000000000;29.0431000000000;27.8808000000000;28.0568000000000;27.7555000000000;22.7002000000000;27.1150000000000;18.8482000000000;12.9038000000000;9.31080000000000;16.7289000000000;9.94480000000000;16.3738000000000;24.1666000000000;31.5673000000000];
-err_2d = [0.575600000000000;0.406700000000000;0.327700000000000;0.716900000000000;0.731900000000000;1.14080000000000;1.50580000000000;0.657400000000000;1.24740000000000;0.0517000000000000;0.976700000000000;0.532800000000000;0.377400000000000;0.506800000000000;0.504700000000000;0.594700000000000;0.317400000000000;0.473000000000000;0.269100000000000;0.356000000000000];
-N = length(err_2d);
+%% Select Dataset
+trial = 0;
+extra = 'a':'g';
+folder = '2022-10-04';
+name = 'trialr_';
 
-figure(1);
-text(pos_z+0.5*ones(N,1), err_2d, string(1:N));
-hold on;
-plot(pos_z, err_2d, '.b');
-title('2D Error with X Position = -25 mm')
-box on
-xlabel('Z Position [mm]'); 
-ylabel('Err 2D [mm]'); 
+for j=1:length(extra)
+    %% Load data
+    load(strcat(folder,'/',name,num2str(trial,'%2.2d'),extra(j),'.mat'));
+
+    %% Loop key
+    k_key = find(key); % Samples when key was pressed
+    ns = length(k_key);
+    T = zeros(1,ns);
+    for i=1:ns
+        k = k_key(i);   %sample
+        if size(yp{1},2) == 3
+            err_step(i,:) = Z(1:3,k) - target;
+        else
+            err_step(i,:) = Z(1:5,k) - [target;0;0];
+        end
+    end
+
+    err_x(j) = abs(err_step(end,1));
+    err_y(j) = abs(err_step(end,2));
+    err_z(j) = abs(err_step(end,3));
+
+    err_2d(j) = sqrt(err_step(end,1)^2+err_step(end,3)^2);
+    err_3d(j) = sqrt(err_step(end,1)^2+err_step(end,2)^2+err_step(end,3)^2);
+
+    if size(err_step,2) == 5
+        err_angle_v(i) = abs(err_step(end,4));
+        err_angle_h(i) = abs(err_step(end,5));
+    end
+
+    fprintf('Trial %2.2d%s \t Err 2D[mm] = %0.4f\n', trial, extra(j), err_2d(j));
+end
+
+fprintf('Final error 2D[mm] = %0.4f +- %0.4f\n', mean(err_2d), std(err_2d));
+
+

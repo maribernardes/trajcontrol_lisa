@@ -1,5 +1,8 @@
 clear; close all; clc;
 
+%% Plot entry points from robot initial X and Z (works only until trial Q, before fixed X robot position)
+%% For each entry point, plots a circle with area proportional do final 2D error
+
 %% Load Dataset
 trial_start = 01;
 trial_end = 15;
