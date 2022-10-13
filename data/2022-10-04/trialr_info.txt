@@ -2,4 +2,5 @@ Phantom #7 (pink) with 2 layer gaze
 
 1) trialr_00a to g: 
 	No compensation tests to get needle deflection after 10cm insertion
+	R Err 2D = 5.16 +- 0.17 mm
 2) trialr_01 to 10: MPC3, H=4, w_ang=3.0, safe_limit=6mm, alpha=0.65

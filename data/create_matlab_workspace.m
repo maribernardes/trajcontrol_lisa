@@ -4,9 +4,9 @@ clear; close all; clc;
 
 %% Get .csv file into table T
 trial = 00;
-extra = 'n';
-folder = 'jacobian';
-name = 'trialr_';
+extra = 'i';
+folder = '2022-10-13';
+name = 'trialt_';
 
 %% Load Dataset
 % Read data from table

@@ -8,11 +8,11 @@ clc;
 %% Select if MPC3 algorithm (with angles) or previous version
 
 %% Select Dataset
-trial = 1:3;
-extra = 'j':'n';
-folder = 'jacobian';
-name = 'test_J_pivot_';
-open_loop = false;  %True = Open-loop insertion (no compensation): trial?-00?
+trial = 0;
+extra = 'a':'g';
+folder = '2022-10-04';
+name = 'trialr_';
+open_loop = true;  %True = Open-loop insertion (no compensation): trial?-00?
 mpc3 = true;        %True = Used MPC3 (with angles)
 
 %% Initialize vectors
