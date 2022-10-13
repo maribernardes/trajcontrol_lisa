@@ -1,0 +1,4 @@
+Phantom #8 (green) with 2 layer gaze
+
+1) trialt_00a to h: 
+	No compensation tests to check if deviation after 10cm insertion is the same from a couple of days ago (trials, 2022-10-07)

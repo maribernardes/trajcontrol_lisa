@@ -1,0 +1,8 @@
+Phantom #7 (pink) with 2 layer gaze
+
+1) trialq_00a: 
+	No compensation test check if total deflection is similar to values from trialp_00a to e
+	Q Err 2D = 9.74mm
+	P Err 2D = ?
+2) trialq_01 to 12: Variable w_ang to get best parameter value. 
+	MPC3, H=4, safe_limit=6mm, alpha=0.65
