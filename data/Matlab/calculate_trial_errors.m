@@ -11,7 +11,7 @@ clc;
 trial = 1:3;
 extra = 'j':'n';
 folder = 'jacobian';
-name = 'test_J_geom_';
+name = 'test_J_pivot_';
 open_loop = false;  %True = Open-loop insertion (no compensation): trial?-00?
 mpc3 = true;        %True = Used MPC3 (with angles)
 
