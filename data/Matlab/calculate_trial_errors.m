@@ -9,9 +9,9 @@ clc;
 
 %% Select Dataset
 trial = 0;
-extra = 'a':'g';
-folder = '2022-10-04';
-name = 'trialr_';
+extra = 'a':'d';
+folder = '2022-10-14';
+name = 'exp_a3_';
 open_loop = true;  %True = Open-loop insertion (no compensation): trial?-00?
 mpc3 = true;        %True = Used MPC3 (with angles)
 
