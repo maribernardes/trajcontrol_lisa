@@ -6,3 +6,14 @@ exp_a3: Phantom #3
 	exp_a1_00a to d: Err 2D = 
 	exp_a2_00a to d: Err 2D = 
 	exp_a3_00a to d: Err 2D = 
+	
+2) Compensation: MPC3, w_ang=3.5, H=4
+	exp_a1_01 to 05:
+	exp_a2_01 to 05:
+	exp_a3_01 to 05:
+3) No Compensation again after all insertions to check if the deviation changes significantly after some hours out of the fridge
+Obs: Phantom #1 was kept in the fridge when testing compensation for #2 and #3. However, I removed it from the fridge and let sit while I went to buy lunch and ate it. Then I checked deflection and it was the same from 00a to 00d)
+
+	exp_a1_00e to h: Err 2D =    	Time since deflection check = 30min (since check after lunch - see obs)
+	exp_a2_00e to h: Err 2D = 	Time since deflection check = 50min
+	exp_a3_00e to h: Err 2D = 	Time since deflection check = 45min

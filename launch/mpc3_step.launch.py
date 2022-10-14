@@ -86,7 +86,7 @@ def generate_launch_description():
         actions.LogInfo(msg = ["filename: ", LaunchConfiguration('filename')]),
         DeclareLaunchArgument(
             "H",
-            default_value = "5",
+            default_value = "4",
             description = "MPC horizon size"
         ),
         actions.LogInfo(msg = ["H: ", LaunchConfiguration('H')]),
