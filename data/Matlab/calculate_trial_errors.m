@@ -8,11 +8,11 @@ clc;
 %% Select if MPC3 algorithm (with angles) or previous version
 
 %% Select Dataset
-trial = 0;
-extra = 'a':'d';
+trial = 1:5;
+extra = 'a':'h';
 folder = '2022-10-14';
-name = 'exp_a3_';
-open_loop = true;  %True = Open-loop insertion (no compensation): trial?-00?
+name = 'exp_a1_';
+open_loop = false;  %True = Open-loop insertion (no compensation): trial?-00?
 mpc3 = true;        %True = Used MPC3 (with angles)
 
 %% Initialize vectors

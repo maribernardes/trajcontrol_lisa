@@ -3,10 +3,10 @@ clear; close all; clc;
 %% Run this to create matlab .mat files from csv files saved by ROS2 save_file node
 
 %% Get .csv file into table T
-trial = 00;
-extra = 'd';
+trial = 0;
+extra = 'h';
 folder = '2022-10-14';
-name = 'exp_a3_';
+name = 'exp_a2_';
 
 %% Load Dataset
 % Read data from table
