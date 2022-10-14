@@ -1,0 +1,8 @@
+exp_a1: Phantom #1
+exp_a2: Phantom #2
+exp_a3: Phantom #3
+
+1) No Compensation insertions to characterize each phantom deviation after 10cm insertion depth:
+	exp_a1_00a to d: Err 2D = 
+	exp_a2_00a to d: Err 2D = 
+	exp_a3_00a to d: Err 2D = 
