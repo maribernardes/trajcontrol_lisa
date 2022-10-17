@@ -1,0 +1,17 @@
+Experiment 2022-10-17
+Room temperature: 70F
+
+exp_b1: Phantom #1 - pink 90g
+exp_b2: Phantom #2 - green 45g
+exp_b3: Phantom #3 - green 22g
+
+1) No Compensation insertions to characterize each phantom deviation after 10cm insertion depth:
+	exp_b1_00a to h: Err 2D = 
+	exp_b2_00a to h: Err 2D = 
+	exp_b3_00a to h: Err 2D = 
+	
+2) Compensation: MPC3, w_ang=3.5, H=4
+	exp_b1_01 to 05:
+	exp_b2_01 to 05:
+	exp_b3_01 to 05:
+
