@@ -1,0 +1,10 @@
+Experiment 2022-10-17
+Room temperature: 70F
+
+exp_d3: Phantom #3 - green 22g
+10mm STEP (not stopping each 5mm, stopping only at 10mm)
+
+Insertion with front of phantom (with "skin") but bigger insertion step: check if model is worse
+1) Compensation: MPC3, w_ang=3.5, H=4, SafeLimit=6mm, InsertionStep = 10mm
+	exp_d3_01 to 05:
+

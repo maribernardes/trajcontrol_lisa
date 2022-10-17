@@ -1,0 +1,12 @@
+Experiment 2022-10-17
+Room temperature: 70F
+
+exp_f2: Phantom #2 - green 45g
+exp_f3: Phantom #3 - green 22g
+10mm STEP (stopping every 5mm, updating (keyboard hit) only every 10mm)
+
+Insertion with front of phantom (with "skin") but bigger insertion step: check if model is worse
+1) Compensation: MPC3, w_ang=3.5, H=4, SafeLimit=6mm, InsertionStep = 10mm
+	exp_f2_01 to 05:
+	exp_f3_01 to 05:
+

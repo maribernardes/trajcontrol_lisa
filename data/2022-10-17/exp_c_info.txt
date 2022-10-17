@@ -1,0 +1,11 @@
+Experiment 2022-10-17
+Room temperature: 70F
+
+exp_b2: Phantom #2 - green 45g
+exp_b3: Phantom #3 - green 22g
+
+Insertion in the back of the phantom (no gaze "skin"): check if system steerability decreases (saturates more)
+1) Compensation: MPC3, w_ang=3.5, H=4, SafeLimit=6mm, InsertionStep = 5mm
+	exp_c2_01 to 05:
+	exp_c3_01 to 08:
+
