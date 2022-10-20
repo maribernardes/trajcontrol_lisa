@@ -9,12 +9,12 @@ global base_init;
 INSERTION_STEP = -5;
 
 %% Load Dataset
-trial = 0;
+trial = 01;
 extra = '';
-folder = 'jacobian';
-name = 'test_J_pivot';
-% load(strcat(folder,'/',name,num2str(trial,'%2.2d'),extra,'.mat'));
-load(strcat(folder,'/',name,extra,'.mat'));
+folder = '2022-10-17';
+name = 'exp_c3_';
+load(strcat(folder,'/',name,num2str(trial,'%2.2d'),extra,'.mat'));
+% load(strcat(folder,'/',name,extra,'.mat'));
 
 %% Configure simulationb
 S = size(up,2);  % data size

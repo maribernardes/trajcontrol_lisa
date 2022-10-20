@@ -6,7 +6,7 @@ clear; close all; clc;
 trial = 05;
 extra = '';
 folder = '2022-10-17';
-name = 'exp_b3_';
+name = 'exp_f3_';
 
 %% Load Dataset
 % Read data from table
