@@ -9,10 +9,10 @@ global base_init;
 INSERTION_STEP = -5;
 
 %% Load Dataset
-trial = 01;
+trial = 04;
 extra = '';
-folder = '2022-10-17';
-name = 'exp_c3_';
+folder = '2022-10-20';
+name = 'exp_g_';
 load(strcat(folder,'/',name,num2str(trial,'%2.2d'),extra,'.mat'));
 % load(strcat(folder,'/',name,extra,'.mat'));
 
