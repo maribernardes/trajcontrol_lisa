@@ -64,15 +64,19 @@ class ControllerRand(Node):
 
     # Send MoveStage action to robot
     def send_cmd(self):
-        # # Generate random control output
-        # new_rand = np.random.uniform(-SAFE_LIMIT, SAFE_LIMIT, 3)
-        # new_rand[1] = self.step*INSERTION_STEP
-        # self.cmd = self.stage_initial + new_rand
 
-        # Generate pre-defined control output
-        P = np.array([[2, -2, -3, -2], #deltaX sequence
-                      [2, 2, -3, -2]]) #deltaZ sequence
-        self.cmd = self.stage_initial + np.array([P[0,self.step-1], self.step*INSERTION_STEP, P[1,self.step-1]])
+        # SELECT ONE OF THE OPTIONS:
+
+        # 1)Generate random control output
+        P = np.random.uniform(-SAFE_LIMIT, SAFE_LIMIT, 2)
+        self.cmd = self.stage_initial + np.array([P[0], self.step*INSERTION_STEP, P[1]])
+
+        # # 2) Generate pre-defined control output
+        # P = np.array([[2, -2, -3, -2], #deltaX sequence
+        #               [2, 2, -3, -2]]) #deltaZ sequence
+        # self.cmd = self.stage_initial + np.array([P[0,self.step-1], self.step*INSERTION_STEP, P[1,self.step-1]])
+
+
         self.get_logger().info('Step #%i: [%f, %f, %f] ' % (self.step, self.cmd[0], self.cmd[1], self.cmd[2]))
 
         ## Keeping this just to be on the safe side
