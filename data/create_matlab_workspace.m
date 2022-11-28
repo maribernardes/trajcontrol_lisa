@@ -3,7 +3,7 @@ clear; close all; clc;
 %% Run this to create matlab .mat files from csv files saved by ROS2 save_file node
 
 %% Get .csv file into table T
-trial = 01;
+trial = 03;
 extra = '';
 folder = 'jacobian';
 name = 'validate_J_';

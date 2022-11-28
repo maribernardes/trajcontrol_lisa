@@ -1,8 +1,12 @@
 %With X = [x_base; y_base; z_base] and Z = [x_tip; y_tip; z_tip; horizangle_tip vertiangle_tip]\n');
 clear; close all; clc;
 
+MARKER = 10;
+LINE = 1.5;
+
+
 %% Load Dataset
-trial = 01;
+trial = 02;
 folder = 'jacobian';
 name = 'validate_J_';
 load(strcat(folder,'/',name,num2str(trial,'%2.2d'),'.mat'));
@@ -15,7 +19,7 @@ base_init = base(:,1);
 %% Loop key
 k_key = find(key); % Samples when key was pressed
 ns = length(k_key);
-step = 1:ns;
+step = 5*(0:ns-1);
 for i=1:ns
     k = k_key(i);   %sample
     Jc_step{i} = J{k};
@@ -32,7 +36,7 @@ for i=2:ns
     deltaZ_hat = Jc_step{i}*(X_step(:,i)-X_step(:,i-1)); % Predict estimate from Jacobian and inputs
     Z_hat(:,i) = deltaZ_hat + Z_step(:,i-1); 
     err(:,i) = Z_hat(:,i) - Z_step(:,i);
-    err_3d(i) = sqrt(err(1,1)^2 + err(1,2)^2 + err(1,3)^2);
+    err_3d(i) = sqrt(err(1,i)^2 + err(2,i)^2 + err(3,i)^2);
 end
 
 %% Calculate error
@@ -43,37 +47,56 @@ err_rms = rms(err,2);
 fprintf('RMS error X [mm] = %0.4f\t Max err X [mm] = %0.4f\n', err_rms(1), max(err(1,:)));
 fprintf('RMS error Y [mm] = %0.4f\t Max err Y [mm] = %0.4f\n', err_rms(2), max(err(2,:)));
 fprintf('RMS error Z [mm] = %0.4f\t Max err Z [mm] = %0.4f\n', err_rms(3), max(err(3,:)));
-fprintf('3D RMS error [mm] = %0.4f\n', rms(err_3d));
+fprintf('Total 3D RMS error [mm] = %0.4f\n', rms(err_3d));
+fprintf('2nd half 3D RMS error [mm] = %0.4f\n', rms(err_3d(round(ns/2):ns)));
 
 
 %% Plot insertion
 
-figure  
-plot(step, -X_step(1,:),'.-', step, X_step(3,:),'.-')
+% First insertion step
+f1 = figure(1);
+f1.Position = [0 0 650 146];
+f1.PaperOrientation = 'landscape'; 
+
+f2 = figure(2);
+f2.Position = [0 0 650 443];
+f2.PaperOrientation = 'landscape'; 
+
+f3 = figure(3);
+f3.Position = [0 0 650 146];
+f3.PaperOrientation = 'landscape'; 
+
+figure(1);
+plot(step, err(1,:),'.-', step, err(2,:),'.-', step, err(3,:),'.-','LineWidth',LINE, 'MarkerSize',MARKER)
 hold on
-title('Needle guide position'),xlabel('step [k]'),ylabel('position [mm]'), legend('horizontal (X)','vertical (Z)')
+ylim([-2 2]);
+title('Estimation Error'),xlabel('Insertion depth [mm]'),ylabel('Error [mm]'), legend('horizontal (X)', 'depth (Y)', 'vertical (Z)', 'Orientation','horizontal','Location', 'southeast')
 
+figure(2);
+subplot(3,1,1);
 
-figure  
-plot(step, -Z_hat(1,:),'.-', step, -Z_step(1,:),'.-')
+plot(step, -Z_hat(1,:),'.-', step, -Z_step(1,:),'.-','LineWidth',LINE, 'MarkerSize',MARKER)
 hold on
-title('Tip position - Horizontal (X)'),xlabel('step [k]'),ylabel('X [mm]'), legend('estimated','measured')
+title('Needle Tip Position'),ylabel('X [mm]'), legend('estimated','measured')
 
-figure  
-plot(step, -Z_hat(2,:),'.-', step, -Z_step(2,:),'.-')
+subplot(3,1,2);
+plot(step, -Z_hat(2,:),'.-', step, -Z_step(2,:),'.-','LineWidth',LINE, 'MarkerSize',MARKER)
 hold on
-title('Tip position - Insertion (Y)'),xlabel('step [k]'),ylabel('Y [mm]'), legend('estimated','measured')
+ylabel('Y [mm]'), legend('estimated','measured')
 
-
-figure  
-plot(step, Z_hat(3,:),'.-', step, Z_step(3,:),'.-')
+subplot(3,1,3);
+plot(step, Z_hat(3,:),'.-', step, Z_step(3,:),'.-','LineWidth',LINE, 'MarkerSize',MARKER)
 hold on
-title('Tip position - Vertical (Z)'),xlabel('step [k]'),ylabel('X [mm]'), legend('estimated','measured')
+xlabel('Insertion depth [mm]'),ylabel('Z [mm]'), legend('estimated','measured')
 
-figure  
-plot(step, err(1,:),'.-', step, err(2,:),'.-', step, err(3,:),'.-')
+
+figure(3);
+plot(step, -X_step(1,:),'.-', step, X_step(3,:),'.-','LineWidth',LINE, 'MarkerSize',MARKER)
 hold on
-title('Estimation error'),xlabel('step [k]'),ylabel('Err [mm]'), legend('horizontal (X)', 'depth (Y)', 'vertical (Z)')
+title('Needle guide position'),xlabel('Insertion depth [mm]'),ylabel('position [mm]'), legend('horizontal (X)','vertical (Z)')
+
+
+
 
 
 

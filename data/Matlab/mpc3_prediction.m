@@ -16,10 +16,10 @@ LINE = 1.5;
 LEGLOC = 'northeast';
 
 %% Load Dataset
-trial = 05;
+trial = 04;
 extra = '';
-folder = '2022-10-17';
-name = 'exp_b1_';
+folder = '2022-10-20';
+name = 'exp_g_';
 load(strcat(folder,'/',name,num2str(trial,'%2.2d'),extra,'.mat'));
 
 resultsfolder = strcat(folder,'/results');
@@ -70,9 +70,9 @@ for i=1:ns
     end
     
     if size(yp{1},2) == 3
-        err_step(i,:) = Z(1:3,k)-target;
+        err_step(i,:) = Z_step(i,1:3)'-target;
     else
-        err_step(i,:) = Z(1:5,k)-[target;0;0];
+        err_step(i,:) = Z_step(i,1:5)'-[target;0;0];
     end
 end
 
@@ -95,22 +95,22 @@ sat_perc = sum(sat)/length(sat);
 
 %% Calculate final results
 final_results = sprintf('*** RESULTS ***\n\n');
-final_results = [final_results, sprintf('Error X [mm] = %0.4f\n', abs(err_step(end,1)))];
+final_results = [final_results, sprintf('Error X [mm] = %0.2f\n', abs(err_step(end,1)))];
 % final_results = [final_results, sprintf('Final error Y [mm] = %0.4f\n', abs(err_step(end,2)))];
-final_results = [final_results, sprintf('Error Z [mm] = %0.4f\n', abs(err_step(end,3)))];
+final_results = [final_results, sprintf('Error Z [mm] = %0.2f\n', abs(err_step(end,3)))];
 
 if size(err_step,2) == 5
 %     final_results = [final_results, sprintf('Final error angle_v [rad] = %0.4f\n', abs(err_step(end,4)))];
 %     final_results = [final_results, sprintf('Final error angle_h [rad] = %0.4f\n', abs(err_step(end,5)))];
 end
 % final_results = [final_results, sprintf('Final error 3D[mm] = %0.4f\n', sqrt(err_step(end,1)^2+err_step(end,2)^2+err_step(end,3)^2))];
-final_results = [final_results, sprintf('Trajectory error [mm] = %0.4f\n', sqrt(err_step(end,1)^2+err_step(end,3)^2))];
+final_results = [final_results, sprintf('Trajectory error [mm] = %0.2f\n', sqrt(err_step(end,1)^2+err_step(end,3)^2))];
 
 final_results = [final_results, sprintf(' \n')];
 
-final_results = [final_results, sprintf('Saturation X (horizontal) [0-1] = %0.4f\n', sat_x_perc)];
-final_results = [final_results, sprintf('Saturation Y (vertical) [0-1] = %0.4f\n', sat_z_perc)];
-final_results = [final_results, sprintf('Control saturation [0-1] = %0.4f\n', sat_x_perc)];
+final_results = [final_results, sprintf('Saturation X (horizontal) [0-1] = %0.2f\n', sat_x_perc)];
+final_results = [final_results, sprintf('Saturation Y (vertical) [0-1] = %0.2f\n', sat_z_perc)];
+final_results = [final_results, sprintf('Control saturation [0-1] = %0.2f\n', sat_x_perc)];
 
 fprintf(final_results);
 
@@ -118,27 +118,28 @@ depth = [0:5:100];
 
 % First insertion step
 f = figure;
-f.Position = [0 0 1000 600];
+f.Position = [0 0 650 600];
+f.PaperOrientation = 'landscape'; 
 
 subplot(4,1,1);
 plot(depth(1:2), Z_step(1:2,1), '.-m','LineWidth',LINE, 'MarkerSize',MARKER);
 plot_target_X('--k');
-title('X - Horizontal');
+title('Needle tip trajectory');
 ylabel('Tip X [mm]'); legend('executed', 'target', 'Location', LEGLOC);
 % set(gca,'Xdir','reverse');
 xlim([0 100]);
 
-subplot(4,1,2);
+subplot(4,1,3);
 plot(depth(1:2), X_step(1:2,1), '.-m','LineWidth',LINE, 'MarkerSize',MARKER);
 plot_safe_limit_X('k');
+title('Needle guide displacement');
 ylabel('Guide X [mm]'); legend('executed', 'safe limit', 'Location', LEGLOC);
 % set(gca,'Xdir','reverse');
 xlim([0 100]);
 
-subplot(4,1,3);
+subplot(4,1,2);
 plot(depth(1:2), Z_step(1:2,3), '.-m','LineWidth',LINE, 'MarkerSize',MARKER);
 plot_target_Z('--k');
-title('Z - Vertical');
 ylabel('Tip Z [mm]'); legend('executed', 'target', 'Location', LEGLOC);
 % set(gca,'Xdir','reverse');
 xlim([0 100]);
@@ -172,23 +173,23 @@ for i=2:S
     subplot(4,1,1);
     plot(depth(1:i), past_y(:,1), '.-m', depth(i:H+i), future_y(:,1), '.-b', 'LineWidth',LINE, 'MarkerSize',MARKER);
     plot_target_X('--k');
-    title('X - Horizontal');
+    title('Needle tip trajectory');
     ylabel('Tip X [mm]'); legend('executed','prediction',  'target', 'Location', LEGLOC);
 %     set(gca,'Xdir','reverse');
     xlim([0 100]);
     
-    subplot(4,1,2);
+    subplot(4,1,3);
     plot(depth(1:i), past_u(:,1), '.-m', depth(i:H+i), future_u(:,1), '.-b', 'LineWidth',LINE, 'MarkerSize',MARKER);
     plot_safe_limit_X('k');
+    title('Needle guide displacement');
     ylabel('Guide X [mm]'); legend('executed','prediction',  'safe limit', 'Location', LEGLOC);
 %     set(gca,'Xdir','reverse');
     xlim([0 100]);
 
     
-    subplot(4,1,3);
+    subplot(4,1,2);
     plot(depth(1:i), past_y(:,3), '.-m', depth(i:H+i), future_y(:,3), '.-b', 'LineWidth',LINE, 'MarkerSize',MARKER);
     plot_target_Z('--k');
-    title('Z - Vertical');
     ylabel('Tip Z [mm]'); legend('executed','prediction',  'target', 'Location', LEGLOC);
 %     set(gca,'Xdir','reverse');
     xlim([0 100]);
@@ -220,22 +221,22 @@ end
 subplot(4,1,1);
 plot(depth, Z_step(:,1), '.-m', 'LineWidth',LINE, 'MarkerSize',MARKER);
 plot_target_X('--k');
-title('X - Horizontal');
+title('Needle tip trajectory');
 ylabel('Tip X [mm]'); legend('executed', 'target', 'Location', LEGLOC);
 % set(gca,'Xdir','reverse');
 xlim([0 100]);
 
-subplot(4,1,2);
+subplot(4,1,3);
 plot(depth, X_step(:,1), '.-m', 'LineWidth',LINE, 'MarkerSize',MARKER);
 plot_safe_limit_X('k');
+title('Needle guide displacement');
 ylabel('Guide X [mm]'); legend('executed', 'safe limit', 'Location', LEGLOC);
 % set(gca,'Xdir','reverse');
 xlim([0 100]);
 
-subplot(4,1,3);
+subplot(4,1,2);
 plot(depth, Z_step(:,3), '.-m', 'LineWidth',LINE, 'MarkerSize',MARKER);
 plot_target_Z('--k');
-title('Z - Vertical');
 ylabel('Tip Z [mm]'); legend('executed', 'target', 'Location', LEGLOC);
 % set(gca,'Xdir','reverse');
 xlim([0 100]);
@@ -249,7 +250,8 @@ xlim([0 100]);
 
 saveas(gcf,strcat(resultsfolder,'/final_',name,num2str(trial,'%2.2d'),extra,'_final'),'png')
 M(S+1) = getframe(gcf);
- 
+
+pause;
 annotation('textbox',[0.25, 0.4, 0.5, 0.3], 'String', final_results, 'BackgroundColor', 'white')
 
 saveas(gcf,strcat(resultsfolder,'/results_',name,num2str(trial,'%2.2d'),extra),'png')
