@@ -8,6 +8,15 @@ This repository contains:
 
 ## Usage <a name="usage"></a>
 
+Create a workspace and to the src folder, commit the following repositories:
+- [trajcontrol](https://github.com/maribernardes/trajcontrol_lisa)
+- [ros2_needle_guide_robot](https://github.com/SmartNeedle/ros2_needle_guide_robot)
+- [ros2_needle_shape_publisher] (https://github.com/SmartNeedle/ros2_needle_shape_publisher.git)
+- [ros2_hyperion_interrogator] (https://github.com/SmartNeedle/ros2_hyperion_interrogator.git)
+- [ros2_igtl_bridge] (https://github.com/tokjun/ros2_igtl_bridge)
+
+Remember to install [OpenIGTLink] (https://github.com/openigtlink/OpenIGTLink)
+
 To build system packages:
 ```bash
   colcon build --cmake-args -DOpenIGTLink_DIR:PATH=<insert_path_to_openigtlink>/OpenIGTLink-build --symlink-install
@@ -115,6 +124,7 @@ To run the trajectory control with MPC, open 3 terminals:
   ros2 launch trajcontrol mpc_step.launch.py H:=4 filename:=NAME 
 ```
 Defining H (default=5) and filename (default=my_data) are optional.
+
 3. Run keyboard node:
 ```bash
   ros2 run trajcontrol keypress
