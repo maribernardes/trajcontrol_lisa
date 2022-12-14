@@ -5,8 +5,8 @@ Overview
 --------
 This repository contains:
 
-- ROS2 trajcontrol package (see nodes and message exchanges in [Communication Diagram](#comm_diagram)
-- Launch files for different control tasks for Lisa robot (see details n [Usage](#usage)
+- ROS2 trajcontrol package (see nodes and message exchanges in [Communication Diagram](#comm_diagram))
+- Launch files for different control tasks for Lisa robot (see details n [Usage](#usage))
 
 Usage <a name="usage"></a>
 -----
