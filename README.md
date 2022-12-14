@@ -11,11 +11,11 @@ This repository contains:
 Create a workspace and to the src folder, commit the following repositories:
 - [trajcontrol](https://github.com/maribernardes/trajcontrol_lisa)
 - [ros2_needle_guide_robot](https://github.com/SmartNeedle/ros2_needle_guide_robot)
-- [ros2_needle_shape_publisher] (https://github.com/SmartNeedle/ros2_needle_shape_publisher.git)
-- [ros2_hyperion_interrogator] (https://github.com/SmartNeedle/ros2_hyperion_interrogator.git)
-- [ros2_igtl_bridge] (https://github.com/tokjun/ros2_igtl_bridge)
+- [ros2_needle_shape_publisher](https://github.com/SmartNeedle/ros2_needle_shape_publisher.git)
+- [ros2_hyperion_interrogator](https://github.com/SmartNeedle/ros2_hyperion_interrogator.git)
+- [ros2_igtl_bridge](https://github.com/tokjun/ros2_igtl_bridge)
 
-Remember to install [OpenIGTLink] (https://github.com/openigtlink/OpenIGTLink)
+Remember to install [OpenIGTLink](https://github.com/openigtlink/OpenIGTLink)
 
 To build system packages:
 ```bash
