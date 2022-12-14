@@ -112,6 +112,7 @@ class SaveFile(Node):
         if msg.name=="BaseToTracker": # Name is adjusted in Plus .xml
             self.aurora_base = [aurora.translation.x, aurora.translation.y, aurora.translation.z, \
                 aurora.rotation.w, aurora.rotation.x, aurora.rotation.y, aurora.rotation.z, int(now.sec), int(now.nanosec)]
+        self.get_logger().info('T = %s ' % (now))
 
     #Get current Z (filtered and in robot frame)
     def sensortip_callback(self, msg):

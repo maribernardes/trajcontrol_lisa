@@ -14,9 +14,9 @@ from launch_ros.actions import Node
 from launch import LaunchDescription, actions
 from launch.actions import DeclareLaunchArgument
 
-# Launch stage control in simple mode
+# Launch stage control in mcp mode
 # Remember to launch PlusServer connected to Aurora in another terminal
-# Remember to launch keypress node (trajcontrol package) in another terminal
+# Remember to run keypress node (trajcontrol package) in another terminal
 
 def generate_launch_description():
 
@@ -62,9 +62,10 @@ def generate_launch_description():
     # Use simple controller (K*J*e)
     controller = Node(
         package = "trajcontrol",
-        executable = "controller_mpc",
+        executable = "controller_mpc3",
         parameters = [
             {"insertion_length": -100.0},
+            {"H": LaunchConfiguration('H')},
             {"filename": LaunchConfiguration('filename')}
             ]
     )   
@@ -83,6 +84,12 @@ def generate_launch_description():
             description = "File name to save .csv file with experimental data"
         ),
         actions.LogInfo(msg = ["filename: ", LaunchConfiguration('filename')]),
+        DeclareLaunchArgument(
+            "H",
+            default_value = "4",
+            description = "MPC horizon size"
+        ),
+        actions.LogInfo(msg = ["H: ", LaunchConfiguration('H')]),
         robot,
         aurora,
         sensor,
