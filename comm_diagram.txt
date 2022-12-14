@@ -7,17 +7,29 @@
   box trajcontrol
     participant keypress
     participant sensor_processing
+    participant estimator
     participant controller
   end box
 
-  keypress-->sensor_processing: '/keyboard/key'
-  keypress->controller: '/keyboard/key'
-  aurora -> ros2_igtl_bridge: PlusServer
-  ros2_igtl_bridge -> sensor_processing: IGTL_TRANSFORM_IN
+  keypress-->sensor_processing: '/keyboard/key' (Int8)
+  keypress->controller: '/keyboard/key' (Int8)
+  aurora -> ros2_igtl_bridge: PlusServer (OpenIGTLink)
+  ros2_igtl_bridge -> sensor_processing: IGTL_TRANSFORM_IN (Transform)
   
-  sensor_processing -> controller: '/needle/state/pose_filtered'
-  UI -> controller: /subject/state/skin_entry
-  UI -> controller: /subject/state/target
+  sensor_processing -> estimator: '/sensor/tip' (PoseStamped)
+  sensor_processing -> estimator: '/sensor/base' (PoseStamped
+  sensor_processing -> controller: '/sensor/tip' (PoseStamped)
+  sensor_processing -> controller: '/sensor/base' (PoseStamped
+
+  sensor_processing --> controller: '/subject/state/skin_entry' (PointStamped)
+  sensor_processing --> controller: '/subject/state/target' (PointStamped)
+
+  estimator -> controller: '/needle/state/jacobian' (Image: matrix wrapper)
+
+  controller -> robot: '/move_stage' (MoveStage action)
+
+  robot -> sensor_processing: 'stage/state/pose' (PoseStamped)
+
   robot -> controller: /stage/state/needle_pose
 
   controller -> robot: /move_stage
